@@ -1,0 +1,135 @@
+--- menshen-compiler/common.h	2024-06-22 00:27:00.212802830 +0200
++++ parametric-menshenC/common.h	2024-07-06 18:42:41.347516389 +0200
+@@ -40,7 +40,7 @@
+ #define OP_TYPE_ARG 3
+ #define OP_TYPE_STD_MD 4
+ 
+-#define MAX_NUM_STAGES 5
++#define MAX_NUM_STAGES 16
+ 
+ #include <sys/types.h>
+ #include <iostream>
+--- menshen-compiler/emit-pkt.cpp	2024-06-22 00:27:00.212802830 +0200
++++ parametric-menshenC/emit-pkt.cpp	2024-07-06 15:54:53.195685558 +0200
+@@ -329,15 +329,15 @@
+ 	}
+ 	int stg_idx = lkup_vid_to_idxrange[vid].first;
+ 	int stg_max = lkup_vid_to_idxrange[vid].second;
+-	int stg_ind[5];
++	int stg_ind[MAX_NUM_STAGES];
+ 	//
+ 	// struct LookupCAMConf dbg_camconf;
+ 	// std::array<struct LookupRAMConf, 25> dbg_ramconf;
+ 	//
+-	for (int i=0; i<5; i++) {
++	for (int i=0; i<MAX_NUM_STAGES; i++) {
+ 		stg_ind[i] = stg_idx;
+ 	}
+-	for(auto stg=0; stg<5; stg++) {
++	for(auto stg=0; stg<MAX_NUM_STAGES; stg++) {
+ 		if (stg_conf[stg].flag) { // valid stg conf
+ 			// for each vid
+ 			if (if_sys != -1) {
+--- menshen-compiler/emit-pkt.h	2024-06-22 00:27:00.212802830 +0200
++++ parametric-menshenC/emit-pkt.h	2024-07-06 15:49:14.255251784 +0200
+@@ -20,11 +20,11 @@
+ 	EmitConfPkt (int if_sys, int vid, cstring filename, cstring outputfile,
+ 					std::map<cstring, int> fields,
+ 					std::map<cstring, struct PHVContainer> allocation,
+-					struct StageConf stgs[5]) : 
++					struct StageConf stgs[MAX_NUM_STAGES]) : 
+ 				if_sys(if_sys), vid(vid), confFilename(filename), outputfile(outputfile),
+ 				fields_bitsize_from_start(fields),
+ 				hdr_phv_allocation(allocation) {
+-		memcpy(stg_conf, stgs, 5*sizeof(struct StageConf));
++		memcpy(stg_conf, stgs, MAX_NUM_STAGES*sizeof(struct StageConf));
+ 
+ 		outStream.open(outputfile, std::ios::out);
+ 		if (!outStream.is_open()) {
+@@ -61,7 +61,7 @@
+ 	// 
+ 	std::map<cstring, int> fields_bitsize_from_start;
+ 	std::map<cstring, struct PHVContainer> hdr_phv_allocation;
+-	struct StageConf stg_conf[5];
++	struct StageConf stg_conf[MAX_NUM_STAGES];
+ };
+ 
+ 
+--- menshen-compiler/fpga-control.cpp	2024-06-22 00:27:00.212802830 +0200
++++ parametric-menshenC/fpga-control.cpp	2024-07-06 15:42:24.681192244 +0200
+@@ -116,8 +116,8 @@
+ 	int st_stg, nxt_st_stg;
+ 	// we only let sys conf be allocated to the last stage
+ 	if (program->options->if_sys != -1) {
+-		st_stg = 4;
+-		nxt_st_stg = 5;
++		st_stg = MAX_NUM_STAGES-1;
++		nxt_st_stg = MAX_NUM_STAGES;
+ 	}
+ 	else {
+ 		st_stg = 0;
+--- menshen-compiler/fpga-control.h	2024-06-22 00:27:00.212802830 +0200
++++ parametric-menshenC/fpga-control.h	2024-07-06 15:48:50.203188068 +0200
+@@ -57,7 +57,7 @@
+ 
+ 	virtual bool build();
+ 	//
+-	struct StageConf stg_conf[5];
++	struct StageConf stg_conf[MAX_NUM_STAGES];
+ };
+ 
+ 
+--- menshen-compiler/fpga-program.cpp	2024-06-22 00:27:00.212802830 +0200
++++ parametric-menshenC/fpga-program.cpp	2024-07-06 15:57:43.359670380 +0200
+@@ -29,13 +29,13 @@
+ // [for debug use]
+ void FPGAProgram::pr_conf() {
+ 	auto &hdr_allocation = control->hdrAccess->hdr_phv_allocation;
+-	auto stg_conf = control->stg_conf; // 5 stages
++	auto stg_conf = control->stg_conf; // MAX_NUM_STAGES stages
+ 	// print out phv allocation
+ 	for (auto &k : hdr_allocation) {
+ 		std::cout << k.first << " " << k.second << std::endl;
+ 	}
+ 
+-	for (auto i=0; i<5; i++) {
++	for (auto i=0; i<MAX_NUM_STAGES; i++) {
+ 		std::cout << "[[[stage]]] " << i << std::endl;
+ 		std::cout << stg_conf[i];
+ 	}
+--- menshen-compiler/fpga-table.cpp	2024-06-22 00:27:00.212802830 +0200
++++ parametric-menshenC/fpga-table.cpp	2024-07-06 15:56:20.611692213 +0200
+@@ -517,12 +517,12 @@
+ 
+ 	/*
+ 	 *  The logic here is simple,
+-	 *  every action can span across at-most 5 stages,
++	 *  every action can span across at-most MAX_NUM_STAGES stages,
+ 	 *  we just keep VLIW at each stage and push them back
+ 	 *  to the stg_conf if it is set
+ 	 */
+-	std::array<std::array<struct LookupRAMConf, 25>, 5> ram_conf;
+-	bool modified_stg[5];
++	std::array<std::array<struct LookupRAMConf, 25>, MAX_NUM_STAGES> ram_conf;
++	bool modified_stg[MAX_NUM_STAGES];
+ 	// zero out
+ 	for (size_t i=0; i<ram_conf.size(); i++) {
+ 		for (size_t j=0; j<ram_conf[i].size(); j++) {
+@@ -705,7 +705,7 @@
+ 	}
+ 
+ 	// push to stg_conf
+-	for (int i=0; i<5; i++) {
++	for (int i=0; i<MAX_NUM_STAGES; i++) {
+ 		if (modified_stg[i]) {
+ 			stg_conf[i].ramconf.push_back(ram_conf[i]);
+ 		}
+@@ -722,7 +722,7 @@
+ 		ret = false;
+ 	}
+ 
+-	if (st_stg > 4) {
++	if (st_stg > MAX_NUM_STAGES-1) {
+ 		BUG("not feasible start stage");
+ 	}
+ 

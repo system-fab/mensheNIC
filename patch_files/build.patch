@@ -1,0 +1,46 @@
+--- build.tcl	2025-05-08 16:54:02.214579000 +0200
++++ build2.tcl	2025-05-09 15:59:16.768055321 +0200
+@@ -376,6 +376,22 @@
+ }
+ set_property include_dirs $include_dirs [current_fileset]
+ 
++create_ip -name cam -vendor xilinx.com -library ip -version 2.3 -module_name cam_arfs
++set_property -dict [list \
++	CONFIG.MODE {CBCAM} \
++	CONFIG.NUM_ENTRIES {16} \
++	CONFIG.KEY_WIDTH {12} \
++	CONFIG.RESP_WIDTH {11} \
++	CONFIG.LOOKUP_RATE {125} \
++	CONFIG.LOOKUP_INTERFACE_FREQ {250} \
++	CONFIG.CLOCKING_MODE {SINGLE CLOCK} \
++] [get_ips cam_arfs]
++
++set_property generate_synth_checkpoint false [get_files cam_arfs.xci]
++reset_target all [get_ips cam_arfs]
++generate_target all [get_ips cam_arfs]
++update_ip_catalog
++
+ # Read the source files from each module
+ # - First, source "build.tcl" if it is defined under `module_dir`
+ # - Then, read all the RTL files under `module_dir` (excluding sub-directories)
+@@ -451,3 +467,20 @@
+ if {$post_impl} {
+     _do_post_impl $top_build_dir $top impl_1 $zynq_family ${board}
+ }
++
++add_files -norecurse ${plugin_dir}/p2p/box_250mhz/user_plugin_250mhz_inst.vh ${plugin_dir}/p2p/box_322mhz/box_322mhz_address_map_inst.vh ${plugin_dir}/p2p/box_322mhz/user_plugin_322mhz_inst.vh ${plugin_dir}/p2p/box_250mhz/box_250mhz_address_map_inst.vh
++update_compile_order -fileset sources_1
++
++set_property is_global_include true [get_files  ${src_dir}/open_nic_shell_macros.vh]
++
++set_property SOURCE_SET sources_1 [get_filesets sim_1]
++add_files -fileset sim_1 -norecurse {{VAR}}/bd_7485_lmb_bram_0.mem {{VAR}}/bd_7485_reg_map_bram_0.mem
++add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_addSub.sv
++add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_drop.sv
++add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_modules.sv
++add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_stages.sv
++add_files -fileset sim_1 -norecurse {{VAR}}/tb_opennic_morePipelines.sv
++add_files -fileset sim_1 -norecurse {{VAR}}/configurations/modules_conf.txt {{VAR}}/configurations/LongPipeline_conf.txt {{VAR}}/configurations/calc_conf.txt {{VAR}}/configurations/drop_conf.txt {{VAR}}/configurations/stages_conf.txt {{VAR}}/configurations/calc_conf_c2h.txt {{VAR}}/configurations/LongPipeline_conf_c2h.txt
++set_property top {{TOP_TB}} [get_filesets sim_1]
++set_property top_lib xil_defaultlib [get_filesets sim_1]
++update_compile_order -fileset sim_1

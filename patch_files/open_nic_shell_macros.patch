@@ -1,0 +1,14 @@
+@@ -22,3 +22,12 @@
+ `define getvec(width, index)            ((index)*(width)) +: (width)
+ 
+ `endif
++
++`define __au280__
++`undef __synthesis__
++`undef __au55c__
++`undef __au50__
++`undef __au55n__
++`undef __au200__
++`undef __au250__
++`undef __au45n__
+\ No newline at end of file
