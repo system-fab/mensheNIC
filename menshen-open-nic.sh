@@ -24,11 +24,11 @@ then
     patch -s -p0 < patch_files/menshen_impl.patch
 else
     patch -s -p0 < patch_files/menshen_sim.patch
-    cp tbs/tb_rmt_wrapper_calc.sv menshen/tb/
-    cp tbs/tb_rmt_wrapper_drop.sv menshen/tb/
-    cp tbs/tb_rmt_wrapper_modules.sv menshen/tb/
-    cp tbs/tb_rmt_wrapper_stages.sv menshen/tb/
-    cp tbs/tb_rmt_wrapper_moreStages.sv menshen/tb/
+    cp pipeline_tbs/tb_rmt_wrapper_calc.sv menshen/tb/
+    cp pipeline_tbs/tb_rmt_wrapper_drop.sv menshen/tb/
+    cp pipeline_tbs/tb_rmt_wrapper_modules.sv menshen/tb/
+    cp pipeline_tbs/tb_rmt_wrapper_stages.sv menshen/tb/
+    cp pipeline_tbs/tb_rmt_wrapper_moreStages.sv menshen/tb/
 fi
 
 cp patch_files/opennic_integration.tcl menshen/tcl/
@@ -43,7 +43,6 @@ then
     rm open-nic-shell/src/qdma_subsystem/qdma_subsystem_function.sv
     cp arfs/qdma_subsystem_function.sv open-nic-shell/src/qdma_subsystem/qdma_subsystem_function.sv
     TOP_TB="tb_opennic_addSub"
-    filter_flag="rx_filter"
     sed -i "s/set_property top {{TOP_TB}}/set_property top ${TOP_TB}/" open-nic-shell/script/build.tcl
     
     # ABS PATH PATCHES

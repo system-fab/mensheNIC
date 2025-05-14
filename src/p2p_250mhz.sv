@@ -263,7 +263,7 @@ module p2p_250mhz #(
       assign m_axis_qdma_c2h_tuser_dst[`getvec(16, i)]        = 16'h1 << i;
 
       rmt_wrapper #(
-        .NUM_OF_STAGES(PIPE_SIZE[i])
+        .NUM_OF_STAGES(PIPE_SIZE[i]),
         .C_S_AXIS_TUSER_WIDTH(48)
       ) tx_ppl_inst (
         .clk(axis_aclk),		// axis clk
@@ -287,7 +287,7 @@ module p2p_250mhz #(
       );
 
       rmt_wrapper #(
-        .NUM_OF_STAGES(PIPE_SIZE[i])
+        .NUM_OF_STAGES(PIPE_SIZE[i]),
         .C_S_AXIS_TUSER_WIDTH(48)
       ) rx_ppl_inst (
         .clk(axis_aclk),		// axis clk

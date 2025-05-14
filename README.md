@@ -24,7 +24,7 @@ In order to build successfully the project, the [Xilinx Content Addressable Memo
 The build process consists on running a script that will clone the OpenNIC repository and patch the files necessary for building and testing the component on the OpenNIC platform.
 1. Clone the repo and enter the folder you just cloned
    ```sh
-   git clone https://github.com/FrancioT/mensheNIC.git && cd mensheNIC
+   git clone --recurse-submodules https://github.com/system-fab/mensheNIC.git && cd mensheNIC
    ```
 2. Give to the script the necessary permissions
    ```sh

@@ -33,9 +33,10 @@ wire								    m_axis_tvalid;
 reg										m_axis_tready;
 wire									m_axis_tlast;
 
-//clk signal
-localparam CYCLE = 10;
+
 localparam logic [C_S_AXIS_DATA_WIDTH-1:0] TARGET_VALUE_STAGES= 512'h00000000100000000c0000000400000001004c4d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;
+//clk signal
+localparam CYCLE = 4;
 
 always begin
     #(CYCLE/2) clk = ~clk;
@@ -62,6 +63,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(3*CYCLE)
+    while(~s_axis_tready)
+        #(CYCLE);
         // conf1.txt:
     s_axis_tdata <= 512'h000000000000000000000000000000010000902f2e00f2f1d204dededede6f6f6f6f0ede1140000001004200004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;

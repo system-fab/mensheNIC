@@ -88,6 +88,9 @@ initial begin
     
     
     finished_config <= 1;
+    
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000002000000030000001a004c4d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;
     s_axis_tuser_mty <= 6'b000000;
     s_axis_tvalid <= 1'b1;
@@ -107,6 +110,8 @@ initial begin
     
     // some time has passed   
     repeat(1000)
+        @(posedge clk);
+    while(~s_axis_tready)
         @(posedge clk);
     s_axis_tdata <= 512'h000000000000000002000000030000000d00594d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;
     s_axis_tuser_mty <= 6'b000000;
@@ -144,22 +149,25 @@ begin
     fd = $fopen("calc_conf.txt", "r");
     while(!$feof(fd))
     begin
-        $fscanf(fd, "%h\n%b\n", s_axis_tdata, s_axis_tuser_mty);
-        s_axis_tvalid <= 1'b1;
-        if(s_axis_tuser_mty != 6'b000000)
+        if(s_axis_tready==1'b1)
         begin
-            s_axis_tlast <= 1'b1;
-            $fscanf(fd, "%b\n\n", s_axis_tcrc);
-            @(posedge clk);
-            s_axis_tvalid <= 1'b0;
-            s_axis_tlast <= 1'b0;
-            repeat(30)
+            $fscanf(fd, "%h\n%b\n", s_axis_tdata, s_axis_tuser_mty);
+            s_axis_tvalid <= 1'b1;
+            if(s_axis_tuser_mty != 6'b000000)
+            begin
+                s_axis_tlast <= 1'b1;
+                $fscanf(fd, "%b\n\n", s_axis_tcrc);
                 @(posedge clk);
-        end
-        else
-        begin
-            s_axis_tlast <= 1'b0;
-            @(posedge clk);
+                s_axis_tvalid <= 1'b0;
+                s_axis_tlast <= 1'b0;
+                repeat(30)
+                    @(posedge clk);
+            end
+            else
+            begin
+                s_axis_tlast <= 1'b0;
+                @(posedge clk);
+            end
         end
     end
     $fclose(fd);

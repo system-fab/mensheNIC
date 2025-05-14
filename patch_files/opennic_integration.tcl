@@ -57,16 +57,27 @@ set_property -dict [list \
 set_property generate_synth_checkpoint false [get_files page_tbl_16w_32d.xci]
 reset_target all [get_ips page_tbl_16w_32d]
 generate_target all [get_ips page_tbl_16w_32d]
-####################
+
+
+create_ip -name cam -vendor xilinx.com -library ip -version 2.3 -module_name cam_top
+set_property -dict [list \
+	CONFIG.MODE {CBCAM} \
+	CONFIG.NUM_ENTRIES {16} \
+	CONFIG.KEY_WIDTH {205} \
+	CONFIG.RESP_WIDTH {4} \
+	CONFIG.LOOKUP_RATE {125} \
+	CONFIG.LOOKUP_INTERFACE_FREQ {250} \
+	CONFIG.CLOCKING_MODE {SINGLE CLOCK} \
+] [get_ips cam_top]
+ 
+
+set_property generate_synth_checkpoint false [get_files cam_top.xci]
+reset_target all [get_ips cam_top]
+generate_target all [get_ips cam_top]
+
 
 update_ip_catalog
-
-###
-add_files "${apath}/memory_init_files/cam_init_file.mif"
-
-###
-read_vhdl -library cam  ${apath}/../xilinx_cam/dmem.vhd
-read_vhdl -library cam  [glob ${apath}/../xilinx_cam/cam*.vhd]
+####################
 
 # rmt-related
 read_verilog "${apath}/fallthrough_small_fifo.v"
@@ -85,7 +96,7 @@ read_verilog "${apath}/depar_wait_segs.v"
 read_verilog "${apath}/rmt_wrapper.sv"
 read_verilog "${apath}/stage.v"
 read_verilog "${apath}/last_stage.v"
-read_verilog "${apath}/output_arbiter.v"
+#read_verilog "${apath}/output_arbiter.v"
 read_verilog "${apath}/action/action_engine.v"
 read_verilog "${apath}/action/alu_1.v"
 read_verilog "${apath}/action/alu_2.v"

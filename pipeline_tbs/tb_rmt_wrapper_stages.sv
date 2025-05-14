@@ -35,7 +35,7 @@ wire									m_axis_tlast;
 
 
 //clk signal
-localparam CYCLE = 10;
+localparam CYCLE = 4;
 
 always begin
     #(CYCLE/2) clk = ~clk;
@@ -61,8 +61,9 @@ initial begin
     s_axis_tuser <= 128'h0;
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
-
-	#(30*CYCLE)
+	#(3*CYCLE)
+	while(~s_axis_tready)
+        #(CYCLE);
 	// conf1.txt:
     s_axis_tdata <= 512'h000000000000000000000000000000010000902f2e00f2f1d204dededede6f6f6f6f0ede1140000001004200004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;

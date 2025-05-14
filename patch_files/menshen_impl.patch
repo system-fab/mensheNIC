@@ -5448,7 +5448,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_men
 +	    s_axis_tdata_r <= s_axis_tdata;
 +        s_axis_tkeep_r <= s_axis_tkeep;
 +        s_axis_tuser_r <= s_axis_tuser;
-+        s_axis_tvalid_r <= s_axis_tvalid;
++        s_axis_tvalid_r <= s_axis_tvalid & s_axis_tready;
 +        s_axis_tready <= &{stg_ready, s_axis_tready_r};
 +        s_axis_tlast_r <= s_axis_tlast;
 +        
@@ -9660,7 +9660,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/tcl/proj_sim.tcl parametric_m
  read_verilog "./action/action_engine.v"
  read_verilog "./action/alu_1.v"
  read_verilog "./action/alu_2.v"
-@@ -111,13 +125,19 @@
+@@ -111,13 +125,18 @@
  read_verilog "./lookup/lookup_engine_top.v"
  read_verilog "./lookup/lke_cam_part.v"
  read_verilog "./lookup/lke_ram_part.v"
@@ -9672,7 +9672,6 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/tcl/proj_sim.tcl parametric_m
 +#add_files -fileset sim_1 -norecurse tb/tb_rmt_wrapper.v
 +add_files -fileset sim_1 -norecurse tb/tb_rmt_wrapper_calc.sv
 +add_files -fileset sim_1 -norecurse tb/tb_rmt_wrapper_drop.sv
-+#add_files -fileset sim_1 -norecurse tb/tb_rmt_wrapper_if_else.sv
 +add_files -fileset sim_1 -norecurse tb/tb_rmt_wrapper_modules.sv
 +add_files -fileset sim_1 -norecurse tb/tb_rmt_wrapper_stages.sv
 +add_files -fileset sim_1 -norecurse tb/tb_rmt_wrapper_moreStages.sv
