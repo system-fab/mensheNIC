@@ -79,6 +79,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010005902a2e00f2f1d204dededede6f6f6f6f0ede1140000001004200004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -92,6 +94,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h0000000000000000000000000000000100014f5e1f00f2f1d204dededede6f6f6f6f1dde1140000001003300004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -105,6 +109,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010f0117ea3300f2f1d204dededede6f6f6f6f09de1140000001004700004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -118,6 +124,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000000002f5693400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -131,6 +139,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000000f02e83c6900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -149,6 +159,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h00000000000000000000000000000001000205693400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -162,6 +174,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010f02e93b6900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -180,6 +194,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010009cf541f00f2f1d204dededede6f6f6f6f1dde1140000001003300004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -193,6 +209,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010f0917e23300f2f1d204dededede6f6f6f6f09de1140000001004700004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -206,6 +224,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h00000000000000000000000000000000000af5613400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -219,6 +239,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000000f0a5be06900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -237,6 +259,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h00000000000000000000000000000001000a05613400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -250,6 +274,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010f0a5be06900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -268,6 +294,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h00000000000000000000000000000002000a15603400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -281,6 +309,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000020f0a7bb76900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -299,6 +329,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h0000000000000000000000000000000100114f4e1f00f2f1d204dededede6f6f6f6f1dde1140000001003300004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -312,6 +344,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010f1117da3300f2f1d204dededede6f6f6f6f09de1140000001004700004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -325,6 +359,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000000012055a3400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -338,6 +374,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000000f125bf16900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -356,6 +394,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h00000000000000000000000000000001001215593400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -369,6 +409,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010f125bf26900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -387,6 +429,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010019cf451f00f2f1d204dededede6f6f6f6f1dde1140000001003300004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -400,6 +444,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010f1917d23300f2f1d204dededede6f6f6f6f09de1140000001004700004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -413,6 +459,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h00000000000000000000000000000000001ad5513400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -426,6 +474,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000000f1ac3b16900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -444,6 +494,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h00000000000000000000000000000001001ae5503400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -457,6 +509,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010f1ac7b06900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -475,6 +529,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h0000000000000000000000000000000100214f3d1f00f2f1d204dededede6f6f6f6f1dde1140000001003300004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -488,6 +544,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010f2117ca3300f2f1d204dededede6f6f6f6f09de1140000001004700004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -501,6 +559,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000000022b5493400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -514,6 +574,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000000f22e91c6900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -532,6 +594,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010022c5483400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -545,6 +609,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010f22e91b6900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -563,6 +629,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010029cf341f00f2f1d204dededede6f6f6f6f1dde1140000001003300004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -576,6 +644,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010f2917c23300f2f1d204dededede6f6f6f6f09de1140000001004700004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -589,6 +659,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h00000000000000000000000000000000002ab5413400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -602,6 +674,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000000f2aa7a16900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -620,6 +694,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h00000000000000000000000000000001002a75403400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -633,6 +709,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010f2aaba06900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -651,6 +729,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h0000000000000000000000000000000100314f2d1f00f2f1d204dededede6f6f6f6f1dde1140000001003300004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -664,6 +744,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010f3117ba3300f2f1d204dededede6f6f6f6f09de1140000001004700004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -677,6 +759,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h00000000000000000000000000000000003245393400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -690,6 +774,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000000f32e80c6900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -708,6 +794,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h00000000000000000000000000000001003255383400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -721,6 +809,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010f32e90b6900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -739,6 +829,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010039cf241f00f2f1d204dededede6f6f6f6f1dde1140000001003300004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -752,6 +844,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000010f3917b23300f2f1d204dededede6f6f6f6f09de1140000001004700004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -765,6 +859,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h00000000000000000000000000000000003a15323400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -778,6 +874,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h000000000000000000000000000000000f3a7b896900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -796,6 +894,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
 
 
     // stateconf.txt:
@@ -812,6 +912,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h00000000000000000000000000000002001351531c00f2f1d204dededede6f6f6f6f20de1140000001003000004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -825,6 +927,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h0000000000000000000000000000000300134d521c00f2f1d204dededede6f6f6f6f20de1140000001003000004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -838,6 +942,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     s_axis_tdata <= 512'h00000000000000000000000000000004001349511c00f2f1d204dededede6f6f6f6f20de1140000001003000004500080f0000810504030201000b0a09080706;
     s_axis_tkeep <= 64'hffffffffffffffff;
     s_axis_tvalid <= 1'b1;
@@ -851,6 +957,8 @@ initial begin
     s_axis_tvalid <= 1'b0;
     s_axis_tlast <= 1'b0;
     #(30*CYCLE)
+    while(~s_axis_tready)
+        @(posedge clk);
     
     
     s_axis_tdata <= 512'h0000000028000000020000000000000001004c4d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;
