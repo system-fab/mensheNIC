@@ -35,13 +35,15 @@ cp patch_files/opennic_integration.tcl menshen/tcl/
 
 
 # ON SHELL
+rm open-nic-shell/src/qdma_subsystem/qdma_subsystem_function.sv
+cp arfs/qdma_subsystem_function.sv open-nic-shell/src/qdma_subsystem/qdma_subsystem_function.sv
+patch open-nic-shell/script/build.tcl < patch_files/build.patch
+
 if [[ "$1" != "$implementation" ]];
 then
-    patch open-nic-shell/script/build.tcl < patch_files/build.patch
+    patch open-nic-shell/script/build.tcl < patch_files/build_sim.patch
     patch open-nic-shell/src/open_nic_shell.sv < patch_files/open_nic_shell.patch
     patch open-nic-shell/src/open_nic_shell_macros.vh < patch_files/open_nic_shell_macros.patch
-    rm open-nic-shell/src/qdma_subsystem/qdma_subsystem_function.sv
-    cp arfs/qdma_subsystem_function.sv open-nic-shell/src/qdma_subsystem/qdma_subsystem_function.sv
     TOP_TB="tb_opennic_addSub"
     sed -i "s/set_property top {{TOP_TB}}/set_property top ${TOP_TB}/" open-nic-shell/script/build.tcl
     
