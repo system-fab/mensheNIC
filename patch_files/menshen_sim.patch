@@ -1,6 +1,6 @@
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/action/action_engine.v parametric_menshen/action/action_engine.v
---- menshen/action/action_engine.v	2025-05-06 16:14:21.366210056 +0200
-+++ parametric_menshen/action/action_engine.v	2025-05-06 16:24:50.215223027 +0200
+--- menshen/action/action_engine.v
++++ parametric_menshen/action/action_engine.v
 @@ -88,7 +88,7 @@
  reg							page_tbl_out_valid, page_tbl_out_valid_next;
  // reg							page_tbl_out_valid_d1;
@@ -615,9 +615,21 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/action/action_engine.v parame
  endgenerate
  
  
+diff -ruN '--exclude=.git' '--exclude=p4c' menshen/action/alu_2.v parametric_menshen/action/alu_2.v
+--- menshen/action/alu_2.v
++++ parametric_menshen/action/alu_2.v
+@@ -122,7 +122,7 @@
+ 				action_type_next = action_in[24:21];
+                 overflow_next = 0;
+ 				alu_state_next = EMPTY1_S;
+-				ready_out_next = 1'b0;
++				//ready_out_next = 1'b0;
+ 
+                 
+                 case(action_in[24:21])
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/action/crossbar.v parametric_menshen/action/crossbar.v
---- menshen/action/crossbar.v	2025-05-06 16:14:21.366210056 +0200
-+++ parametric_menshen/action/crossbar.v	2025-05-06 16:24:50.215223027 +0200
+--- menshen/action/crossbar.v
++++ parametric_menshen/action/crossbar.v
 @@ -48,71 +48,91 @@
  wire [ACT_LEN-1:0]       sub_action [24:0];
  
@@ -785,8 +797,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/action/crossbar.v parametric_
  
          		else begin
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/depar_do_deparsing.v parametric_menshen/depar_do_deparsing.v
---- menshen/depar_do_deparsing.v	2025-05-06 16:14:21.367210056 +0200
-+++ parametric_menshen/depar_do_deparsing.v	2025-05-06 16:24:50.215223027 +0200
+--- menshen/depar_do_deparsing.v
++++ parametric_menshen/depar_do_deparsing.v
 @@ -98,17 +98,39 @@
  wire [9:0] parse_action_ind_10b [0:9];
  
@@ -871,8 +883,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/depar_do_deparsing.v parametr
  			.val_out			(sub_depar_val_out[index]),
  			.val_out_type		(sub_depar_val_out_type[index])
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/deparser_top.v parametric_menshen/deparser_top.v
---- menshen/deparser_top.v	2025-05-06 16:14:21.367210056 +0200
-+++ parametric_menshen/deparser_top.v	2025-05-06 16:24:50.215223027 +0200
+--- menshen/deparser_top.v
++++ parametric_menshen/deparser_top.v
 @@ -176,6 +176,7 @@
  
  //
@@ -892,8 +904,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/deparser_top.v parametric_men
  do_deparsing
  (
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/extract/key_extract_top.v parametric_menshen/extract/key_extract_top.v
---- menshen/extract/key_extract_top.v	2025-05-06 16:14:21.368210056 +0200
-+++ parametric_menshen/extract/key_extract_top.v	2025-05-06 16:24:50.216223027 +0200
+--- menshen/extract/key_extract_top.v
++++ parametric_menshen/extract/key_extract_top.v
 @@ -153,18 +153,6 @@
  
  
@@ -1638,9 +1650,32 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/extract/key_extract_top.v par
  endgenerate
  
  //==========================================================
+diff -ruN '--exclude=.git' '--exclude=p4c' menshen/extract/key_extract.v parametric_menshen/extract/key_extract.v
+--- menshen/extract/key_extract.v
++++ parametric_menshen/extract/key_extract.v
+@@ -101,6 +101,8 @@
+ 	else begin
+ 		case (state)
+ 			IDLE_S: begin
++				phv_valid_out <= 0;
++				key_valid_out <= 0;
+ 				if (phv_valid_in) begin
+ 					key_offset_r <= key_offset_w;
+ 					key_mask_out_r <= key_mask_w;
+@@ -135,10 +137,6 @@
+ 
+ 					state <= CYCLE_1;
+ 				end
+-				else begin
+-					phv_valid_out <= 0;
+-					key_valid_out <= 0;
+-				end
+ 			end
+ 			CYCLE_1: begin
+ 				key_out[KEY_LEN-1                                     -: WIDTH_6B] <= cont_6B[key_offset_r[KEY_OFF-1     -: 3]];
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/last_stage.v parametric_menshen/last_stage.v
---- menshen/last_stage.v	2025-05-06 16:14:21.368210056 +0200
-+++ parametric_menshen/last_stage.v	2025-05-06 16:24:50.216223027 +0200
+--- menshen/last_stage.v
++++ parametric_menshen/last_stage.v
 @@ -4,13 +4,14 @@
  module last_stage #(
      parameter C_S_AXIS_DATA_WIDTH = 512,
@@ -1776,8 +1811,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/last_stage.v parametric_mensh
  end
  
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_cam_part.v parametric_menshen/lookup/lke_cam_part.v
---- menshen/lookup/lke_cam_part.v	2025-05-06 16:14:21.368210056 +0200
-+++ parametric_menshen/lookup/lke_cam_part.v	2025-05-06 16:24:50.216223027 +0200
+--- menshen/lookup/lke_cam_part.v
++++ parametric_menshen/lookup/lke_cam_part.v
 @@ -8,7 +8,8 @@
      parameter KEY_LEN = 48*2+32*2+16*2+5,
      parameter ACT_LEN = 625,
@@ -1788,7 +1823,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_cam_part.v paramet
  )
  (
      input clk,
-@@ -44,101 +45,116 @@
+@@ -44,101 +45,115 @@
  );
  
  /********intermediate variables declared here********/
@@ -1839,7 +1874,6 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_cam_part.v paramet
 +wire               rst_busy_r;
 +reg [207:0]        cam_in;
 +reg                key_valid_r;
-+reg                ready_in_r;
 +wire [223:0]       cam_out_data_r;
 +wire               cam_out_valid_r;
 +wire               cam_lkup_ready_r;
@@ -1990,7 +2024,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_cam_part.v paramet
      end
  end
  
-@@ -162,17 +178,12 @@
+@@ -162,17 +177,12 @@
  
  reg  [7:0]          c_index_act;
  reg                 c_wr_en_act;
@@ -2008,7 +2042,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_cam_part.v paramet
  
  localparam IDLE_C = 0,
             PARSE_C = 1,
-@@ -183,133 +194,111 @@
+@@ -183,133 +193,111 @@
             ACT_TMP_ENTRY = 6,
  		   FLUSH_REST_C = 7;
  
@@ -2243,7 +2277,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_cam_part.v paramet
                          else begin
                              c_index_cam <= 0;
                              c_wr_en_cam <= 0;
-@@ -317,391 +306,165 @@
+@@ -317,391 +305,163 @@
                              c_index_act <= 0;
                              c_wr_en_act <= 0;
  
@@ -2685,7 +2719,6 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_cam_part.v paramet
 +            
 +            cam_in <= 0;
 +            key_valid_r <= 0;
-+            ready_in_r <= 0;
 +            
 +            cam_out_data <= 0;
 +            cam_out_valid <= 0;
@@ -2701,7 +2734,6 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_cam_part.v paramet
 +            
 +            cam_in <= {3'b000, vlan_id_ff[3:0], vlan_id_ff[11:4], extract_key_ff};
 +            key_valid_r <= key_valid_ff;
-+            ready_in_r <= ready_in;
 +            
 +            cam_out_data <= cam_out_data_r;
 +            cam_out_valid <= cam_out_valid_r;
@@ -2734,7 +2766,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_cam_part.v paramet
 +        // axi stream inputs
 +        .s_axis_lkup_tdata(cam_in),
 +        .s_axis_lkup_tvalid(key_valid_r),
-+        .m_axis_lkup_tready(ready_in_r),
++        .m_axis_lkup_tready(ready_in),
 +        
 +        // axi stream outputs
 +        .m_axis_lkup_tdata(cam_out_data_r),
@@ -2776,8 +2808,17 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_cam_part.v paramet
  
  endmodule
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_ram_part.v parametric_menshen/lookup/lke_ram_part.v
---- menshen/lookup/lke_ram_part.v	2025-05-06 16:14:21.368210056 +0200
-+++ parametric_menshen/lookup/lke_ram_part.v	2025-05-06 16:24:50.216223027 +0200
+--- menshen/lookup/lke_ram_part.v
++++ parametric_menshen/lookup/lke_ram_part.v
+@@ -71,7 +71,7 @@
+ 		   EMPTY1_S = 3'd5,
+ 		   OUTPUT_S = 3'd6;
+ 
+-assign ready_out = lookup_state!=HALT_S;
++assign ready_out = (lookup_state!=HALT_S) && (lookup_state!=WAIT1_S || ready_in);
+ 
+ always @(posedge clk or negedge rst_n) begin
+ 
 @@ -164,10 +164,6 @@
  
  reg [2:0]           c_state;
@@ -2885,37 +2926,6 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_ram_part.v paramet
 -                c_m_axis_tlast <= 0;
 -
 -                c_state <= IDLE_C;
--
--            end
--
--            else begin
--                case(c_state)
--                    IDLE_C: begin
--                        if(c_s_axis_tvalid) begin
--                            if(mod_id[7:3] == STAGE_ID && mod_id[2:0] == LOOKUP_ID 
--									&& control_flag == 16'hf2f1
--									&& resv != 4'b0) begin
--                                //ACTION entry
--                                continous_flag <= 1'b0;
--                                c_index_act <= c_s_axis_tdata[384+:8];
--                                c_state <= ACT_TMP_ENTRY_WAIT;
--                            end
--                            //not for lookup
--                            else begin
--                                c_index_cam <= 0;
--                                c_wr_en_cam <= 0;
--
--                                c_index_act <= 0;
--                                c_wr_en_act <= 0;
--
--                                act_entry_tmp <= 0;
--                                continous_flag <= 0;
--
--                                c_m_axis_tdata <= c_s_axis_tdata;
--                                c_m_axis_tuser <= c_s_axis_tuser;
--                                c_m_axis_tkeep <= c_s_axis_tkeep;
--                                c_m_axis_tvalid <= c_s_axis_tvalid;
--                                c_m_axis_tlast <= c_s_axis_tlast;
 +generate
 +    assign mod_id = c_s_axis_tdata[368+:8];
 +    assign resv   = c_s_axis_tdata[376+:4];
@@ -3005,13 +3015,42 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_ram_part.v paramet
 +            c_m_axis_tkeep <= 0;
 +            c_m_axis_tvalid <= 0;
 +            c_m_axis_tlast <= 0;
-+
+ 
+-            end
 +            c_state <= IDLE_C;
+ 
+-            else begin
+-                case(c_state)
+-                    IDLE_C: begin
+-                        if(c_s_axis_tvalid) begin
+-                            if(mod_id[7:3] == STAGE_ID && mod_id[2:0] == LOOKUP_ID 
+-									&& control_flag == 16'hf2f1
+-									&& resv != 4'b0) begin
+-                                //ACTION entry
+-                                continous_flag <= 1'b0;
+-                                c_index_act <= c_s_axis_tdata[384+:8];
+-                                c_state <= ACT_TMP_ENTRY_WAIT;
+-                            end
+-                            //not for lookup
+-                            else begin
+-                                c_index_cam <= 0;
+-                                c_wr_en_cam <= 0;
+-
+-                                c_index_act <= 0;
+-                                c_wr_en_act <= 0;
+-
+-                                act_entry_tmp <= 0;
+-                                continous_flag <= 0;
+-
+-                                c_m_axis_tdata <= c_s_axis_tdata;
+-                                c_m_axis_tuser <= c_s_axis_tuser;
+-                                c_m_axis_tkeep <= c_s_axis_tkeep;
+-                                c_m_axis_tvalid <= c_s_axis_tvalid;
+-                                c_m_axis_tlast <= c_s_axis_tlast;
++        end
  
 -                                c_state <= IDLE_C;
 -                            end
-+        end
-+
 +        else begin
 +            case(c_state)
 +                IDLE_C: begin
@@ -3422,8 +3461,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_ram_part.v paramet
  
  endmodule
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lookup_engine_top.v parametric_menshen/lookup/lookup_engine_top.v
---- menshen/lookup/lookup_engine_top.v	2025-05-06 16:14:21.368210056 +0200
-+++ parametric_menshen/lookup/lookup_engine_top.v	2025-05-06 16:13:52.979209471 +0200
+--- menshen/lookup/lookup_engine_top.v
++++ parametric_menshen/lookup/lookup_engine_top.v
 @@ -8,7 +8,8 @@
      parameter KEY_LEN = 48*2+32*2+16*2+5,
      parameter ACT_LEN = 625,
@@ -3445,8 +3484,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lookup_engine_top.v pa
  lke_cam (
  	.clk		(clk),
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/output_arbiter.v parametric_menshen/output_arbiter.v
---- menshen/output_arbiter.v	2025-05-06 16:14:21.369210056 +0200
-+++ parametric_menshen/output_arbiter.v	1970-01-01 01:00:00.000000000 +0100
+--- menshen/output_arbiter.v
++++ parametric_menshen/output_arbiter.v
 @@ -1,176 +0,0 @@
 -`timescale 1ns / 1ps
 -
@@ -3625,8 +3664,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/output_arbiter.v parametric_m
 -
 -endmodule
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing_top.v parametric_menshen/parser_do_parsing_top.v
---- menshen/parser_do_parsing_top.v	2025-05-06 16:14:21.369210056 +0200
-+++ parametric_menshen/parser_do_parsing_top.v	2025-05-06 16:24:50.216223027 +0200
+--- menshen/parser_do_parsing_top.v
++++ parametric_menshen/parser_do_parsing_top.v
 @@ -30,160 +30,107 @@
  	output reg										vlan_out_valid
  );
@@ -3969,35 +4008,37 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing_top.v param
 -
  endmodule
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing.v parametric_menshen/parser_do_parsing.v
---- menshen/parser_do_parsing.v	2025-05-06 16:14:21.369210056 +0200
-+++ parametric_menshen/parser_do_parsing.v	2025-05-06 16:24:50.216223027 +0200
-@@ -73,6 +73,33 @@
+--- menshen/parser_do_parsing.v
++++ parametric_menshen/parser_do_parsing.v
+@@ -73,6 +73,35 @@
  					EMPTY_1=6;
  					
  
 +reg [C_NUM_SEGS*C_AXIS_DATA_WIDTH-1:0]		tdata_segs_r;
 +reg [C_AXIS_TUSER_WIDTH-1:0]				tuser_1st_r;
-+reg											segs_valid_r;
 +reg [C_PARSER_RAM_WIDTH-1:0]				bram_in_r;
 +reg											bram_in_valid_r;
 +reg											stg_ready_in_r;
++reg [9:0]                                   sub_parse_act_valid;
 +
 +always @(posedge axis_clk) begin
 +	if (~aresetn) begin
 +		tdata_segs_r <= 0;
 +		tuser_1st_r <= 0;
-+		segs_valid_r <= 0;
 +		bram_in_r <= 0;
 +		bram_in_valid_r <= 0;
 +		stg_ready_in_r <= 0;
++		
++		sub_parse_act_valid <= 0;
 +	end
 +	else begin
 +		tdata_segs_r <=    tdata_segs;
 +		tuser_1st_r <=     tuser_1st;
-+		segs_valid_r <=    segs_valid;
 +		bram_in_r <=       bram_in;
 +		bram_in_valid_r <= bram_in_valid;
 +		stg_ready_in_r <=  stg_ready_in;
++		
++		sub_parse_act_valid <= {10{segs_valid}};
 +	end
 +end
 +
@@ -4005,7 +4046,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing.v parametri
  //
  reg [PKT_HDR_LEN-1:0]	pkt_hdr_vec_next;
  reg parser_valid_next;
-@@ -83,16 +110,16 @@
+@@ -83,19 +112,18 @@
  // parsing actions
  wire [15:0] parse_action [0:9];		// we have 10 parse action
  
@@ -4031,20 +4072,46 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing.v parametri
 +assign parse_action[0] = bram_in_r[144+:16];
  
  
- reg [9:0] sub_parse_act_valid;
-@@ -164,9 +191,9 @@
+-reg [9:0] sub_parse_act_valid;
+ wire [47:0] sub_parse_val_out [0:9];
+ wire [9:0] sub_parse_val_out_valid;
+ wire [1:0] sub_parse_val_out_type [0:9];
+@@ -157,24 +185,11 @@
+ 	val_6B_nxt[6]=val_6B[6];
+ 	val_6B_nxt[7]=val_6B[7];
+ 	//
+-	sub_parse_act_valid = 10'b0;
+-	//
+ 	vlan_out_next = vlan_out;
+ 	vlan_out_valid_next = 0;
  
  	case (state)
  		IDLE: begin
 -			if (segs_valid) begin
-+			if (segs_valid_r) begin
- 				sub_parse_act_valid = 10'b1111111111;
+-				sub_parse_act_valid = 10'b1111111111;
 -				vlan_out_next = tdata_segs[116+:12];
-+				vlan_out_next = tdata_segs_r[116+:12];
- 				state_next = FINISH_SUB_PARSE;
- 			end
+-				state_next = FINISH_SUB_PARSE;
+-			end
+-		end
+-		FINISH_SUB_PARSE: begin
+-			state_next = EMPTY_1;
+-		end
+-		EMPTY_1: begin
+-			state_next = GET_PHV_OUTPUT;
+ 			`SUB_PARSE(0)
+ 			`SUB_PARSE(1)
+ 			`SUB_PARSE(2)
+@@ -185,19 +200,18 @@
+ 			`SUB_PARSE(7)
+ 			`SUB_PARSE(8)
+ 			`SUB_PARSE(9)
++			vlan_out_next = tdata_segs_r[116+:12];
+ 			vlan_out_valid_next = 1;
++			
++			if(&sub_parse_val_out_valid_d1)
++			    state_next = GET_PHV_OUTPUT;
  		end
-@@ -191,13 +218,8 @@
+ 		GET_PHV_OUTPUT: begin
  			pkt_hdr_vec_next ={val_6B_swapped[7], val_6B_swapped[6], val_6B_swapped[5], val_6B_swapped[4], val_6B_swapped[3], val_6B_swapped[2], val_6B_swapped[1], val_6B_swapped[0],
  							val_4B_swapped[7], val_4B_swapped[6], val_4B_swapped[5], val_4B_swapped[4], val_4B_swapped[3], val_4B_swapped[2], val_4B_swapped[1], val_4B_swapped[0],
  							val_2B_swapped[7], val_2B_swapped[6], val_2B_swapped[5], val_2B_swapped[4], val_2B_swapped[3], val_2B_swapped[2], val_2B_swapped[1], val_2B_swapped[0],
@@ -4060,7 +4127,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing.v parametri
  				parser_valid_next = 1;
  				state_next = IDLE;
  			end
-@@ -206,7 +228,7 @@
+@@ -206,7 +220,7 @@
  			end
  		end
  		OUTPUT: begin
@@ -4069,7 +4136,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing.v parametri
  				parser_valid_next = 1;
  				state_next = IDLE;
  				
-@@ -345,7 +367,7 @@
+@@ -345,7 +359,7 @@
  			.parse_act_valid	(sub_parse_act_valid[index]),
  			.parse_act			(parse_action[index]),
  
@@ -4079,8 +4146,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing.v parametri
  			.val_out			(sub_parse_val_out[index]),
  			.val_out_type		(sub_parse_val_out_type[index]),
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_top.v parametric_menshen/parser_top.v
---- menshen/parser_top.v	2025-05-06 16:14:21.369210056 +0200
-+++ parametric_menshen/parser_top.v	2025-05-06 16:24:50.216223027 +0200
+--- menshen/parser_top.v
++++ parametric_menshen/parser_top.v
 @@ -37,7 +37,6 @@
  	output reg									out_vlan_valid,
  	input									out_vlan_ready,
@@ -4309,8 +4376,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_top.v parametric_mensh
  do_parsing
  (
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/pkt_filter.v parametric_menshen/pkt_filter.v
---- menshen/pkt_filter.v	2025-05-06 16:14:21.369210056 +0200
-+++ parametric_menshen/pkt_filter.v	2025-05-06 16:13:52.981209471 +0200
+--- menshen/pkt_filter.v
++++ parametric_menshen/pkt_filter.v
 @@ -10,8 +10,8 @@
  	parameter C_VLANID_WIDTH = 12
  )
@@ -4380,9 +4447,9 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/pkt_filter.v parametric_mensh
  //
  assign s_axis_tready = !pkt_fifo_full;
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_menshen/rmt_wrapper.sv
---- menshen/rmt_wrapper.sv	1970-01-01 01:00:00.000000000 +0100
-+++ parametric_menshen/rmt_wrapper.sv	2025-05-06 16:24:50.217223027 +0200
-@@ -0,0 +1,594 @@
+--- menshen/rmt_wrapper.sv
++++ parametric_menshen/rmt_wrapper.sv
+@@ -0,0 +1,685 @@
 +`timescale 1ns / 1ps
 +
 +module rmt_wrapper #(
@@ -4450,12 +4517,12 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_men
 +logic                                 s_axis_tready_r;
 +logic                                 s_axis_tlast_r;
 +
-+logic [C_S_AXIS_DATA_WIDTH-1:0]       m_axis_tdata_r;
-+logic [((C_S_AXIS_DATA_WIDTH/8))-1:0] m_axis_tkeep_r;
-+logic [C_S_AXIS_TUSER_WIDTH-1:0]      m_axis_tuser_r;
-+logic                                 m_axis_tvalid_r;
++logic [C_S_AXIS_DATA_WIDTH-1:0]       m_axis_tdata_r  [1:0];
++logic [((C_S_AXIS_DATA_WIDTH/8))-1:0] m_axis_tkeep_r  [1:0];
++logic [C_S_AXIS_TUSER_WIDTH-1:0]      m_axis_tuser_r  [1:0];
++logic                                 m_axis_tvalid_r [1:0];
 +logic                                 m_axis_tready_r;
-+logic                                 m_axis_tlast_r;
++logic                                 m_axis_tlast_r  [1:0];
 +
 +logic [31:0] vlan_drop_flags_r;
 +logic [31:0] ctrl_token_r;
@@ -4574,7 +4641,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_men
 +logic parser_m_axis_tlast;
 +logic parser_m_axis_tvalid;
 +
-+logic pkt_fifo_rd_en;
++logic pkt_fifo_rd_en [1:0];
 +logic pkt_fifo_nearly_full;
 +logic pkt_fifo_empty;
 +
@@ -4594,7 +4661,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_men
 +	.din			({parser_m_axis_tdata, parser_m_axis_tuser,
 +				  parser_m_axis_tkeep, parser_m_axis_tlast}),     // input logic [704 : 0] din
 +	.wr_en			(parser_m_axis_tvalid),     // input logic wr_en
-+	.rd_en			(pkt_fifo_rd_en),           // input logic rd_en
++	.rd_en			(pkt_fifo_rd_en[switch_in_pkt_fifo]),           // input logic rd_en
 +	.dout			({pkt_fifo_tdata_out, pkt_fifo_tuser_out,
 +				  pkt_fifo_tkeep_out, pkt_fifo_tlast_out}),       // output logic [704 : 0] dout
 +	.full			(),
@@ -4606,7 +4673,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_men
 +logic [PKT_VEC_WIDTH-1:0] phv_fifo_out;
 +logic last_stg_phv_out_valid;
 +
-+logic phv_fifo_rd_en;
++logic phv_fifo_rd_en [1:0];
 +logic phv_fifo_nearly_full;
 +logic phv_fifo_empty;
 +logic [(PKT_VEC_WIDTH/2)-1:0] high_phv_out;
@@ -4624,7 +4691,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_men
 +	.reset			(~aresetn),
 +	.din			(last_stg_phv_out[(PKT_VEC_WIDTH/2)-1:0]),
 +	.wr_en			(last_stg_phv_out_valid),
-+	.rd_en			(phv_fifo_rd_en),
++	.rd_en			(phv_fifo_rd_en[switch_in_phv_fifo]),
 +	.dout			(low_phv_out),
 +	.full			(),
 +	.nearly_full		(phv_fifo_nearly_full),
@@ -4640,7 +4707,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_men
 +	.reset			(~aresetn),
 +	.din			(last_stg_phv_out[PKT_VEC_WIDTH-1:(PKT_VEC_WIDTH/2)]),
 +	.wr_en			(last_stg_phv_out_valid),
-+	.rd_en			(phv_fifo_rd_en),
++	.rd_en			(phv_fifo_rd_en[switch_in_phv_fifo]),
 +	.dout			(high_phv_out),
 +	.full			(),
 +	.nearly_full		(),
@@ -4869,13 +4936,59 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_men
 +	.c_m_axis_tvalid	(ctrl_s_axis_tvalid[NUM_OF_STAGES+1])
 +);
 +
++
++logic switch_in_pkt_fifo;      // logic used for the 2 deparsers, since the FSM inside can accept packets only at
++logic switch_in_phv_fifo;      // half the frequency of the clock
++logic switch_out;
++
++// per ingressi e tready mi basta fare questo, dove switcho fra un deparser e l'altro (devo averne istanziati 2)
++always @(posedge clk) begin
++    if (~aresetn) begin
++        switch_in_pkt_fifo <= 0;
++    end
++    else begin
++        if(pkt_fifo_tlast_out && !pkt_fifo_empty && pkt_fifo_rd_en[switch_in_pkt_fifo])
++        begin
++            switch_in_pkt_fifo <= ~switch_in_pkt_fifo;
++        end
++    end
++end
++
++always @(posedge clk) begin
++    if (~aresetn) begin
++        switch_in_phv_fifo <= 0;
++    end
++    else begin
++        if(!phv_fifo_empty && phv_fifo_rd_en[switch_in_phv_fifo])
++        begin
++            switch_in_phv_fifo <= ~switch_in_phv_fifo;
++        end
++    end
++end
++
++// per gli output faccio la stessa cosa, ma con uno switch diverso e il ready in lo metto uguale ad entrambi
++always @(posedge clk) begin
++    if (~aresetn) begin
++        switch_out <= 0;
++    end
++    else begin
++        if(m_axis_tlast_r[switch_out] && m_axis_tvalid_r[switch_out])
++        begin
++            switch_out <= ~switch_out;
++        end
++    end
++end
++
++// N.B: ready in e control path sono quindi cortocircuitati su entrambi i moduli del deparser. Non serve fare uno switch per loro
++
++
 +deparser_top #(
 +	.C_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH),
 +	.C_AXIS_TUSER_WIDTH(C_S_AXIS_TUSER_WIDTH),
 +	.C_PKT_VEC_WIDTH(),
 +	.DEPARSER_MOD_ID()
 +)
-+phv_deparser (
++phv_deparser_1 (
 +	.axis_clk		(clk),
 +	.aresetn		(aresetn),
 +
@@ -4884,19 +4997,19 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_men
 +	.pkt_fifo_tkeep		(pkt_fifo_tkeep_out),
 +	.pkt_fifo_tuser		(pkt_fifo_tuser_out),
 +	.pkt_fifo_tlast		(pkt_fifo_tlast_out),
-+	.pkt_fifo_empty		(pkt_fifo_empty),
++	.pkt_fifo_empty		(pkt_fifo_empty | switch_in_pkt_fifo),
 +	// output from STAGE
-+	.pkt_fifo_rd_en		(pkt_fifo_rd_en),
++	.pkt_fifo_rd_en		(pkt_fifo_rd_en[0]),
 +
 +	.phv_fifo_out		(phv_fifo_out),
-+	.phv_fifo_empty		(phv_fifo_empty),
-+	.phv_fifo_rd_en		(phv_fifo_rd_en),
++	.phv_fifo_empty		(phv_fifo_empty | switch_in_phv_fifo),
++	.phv_fifo_rd_en		(phv_fifo_rd_en[0]),
 +	// output
-+	.depar_out_tdata	(m_axis_tdata_r),
-+	.depar_out_tkeep	(m_axis_tkeep_r),
-+	.depar_out_tuser	(m_axis_tuser_r),
-+	.depar_out_tvalid	(m_axis_tvalid_r),
-+	.depar_out_tlast	(m_axis_tlast_r),
++	.depar_out_tdata	(m_axis_tdata_r[0]),
++	.depar_out_tkeep	(m_axis_tkeep_r[0]),
++	.depar_out_tuser	(m_axis_tuser_r[0]),
++	.depar_out_tvalid	(m_axis_tvalid_r[0]),
++	.depar_out_tlast	(m_axis_tlast_r[0]),
 +	// input
 +	.depar_out_tready	(m_axis_tready_r),
 +
@@ -4908,6 +5021,47 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_men
 +	.ctrl_s_axis_tlast	(ctrl_s_axis_tlast_sv[NUM_OF_STAGES+1])
 +);
 +
++deparser_top #(
++	.C_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH),
++	.C_AXIS_TUSER_WIDTH(C_S_AXIS_TUSER_WIDTH),
++	.C_PKT_VEC_WIDTH(),
++	.DEPARSER_MOD_ID()
++)
++phv_deparser_2 (
++	.axis_clk		(clk),
++	.aresetn		(aresetn),
++
++	//data plane
++	.pkt_fifo_tdata		(pkt_fifo_tdata_out),
++	.pkt_fifo_tkeep		(pkt_fifo_tkeep_out),
++	.pkt_fifo_tuser		(pkt_fifo_tuser_out),
++	.pkt_fifo_tlast		(pkt_fifo_tlast_out),
++	.pkt_fifo_empty		(pkt_fifo_empty | ~switch_in_pkt_fifo),
++	// output from STAGE
++	.pkt_fifo_rd_en		(pkt_fifo_rd_en[1]),
++
++	.phv_fifo_out		(phv_fifo_out),
++	.phv_fifo_empty		(phv_fifo_empty | ~switch_in_phv_fifo),
++	.phv_fifo_rd_en		(phv_fifo_rd_en[1]),
++	// output
++	.depar_out_tdata	(m_axis_tdata_r[1]),
++	.depar_out_tkeep	(m_axis_tkeep_r[1]),
++	.depar_out_tuser	(m_axis_tuser_r[1]),
++	.depar_out_tvalid	(m_axis_tvalid_r[1]),
++	.depar_out_tlast	(m_axis_tlast_r[1]),
++	// input
++	.depar_out_tready	(m_axis_tready_r),
++
++	//control path
++	.ctrl_s_axis_tdata	(ctrl_s_axis_tdata_sv[NUM_OF_STAGES+1]),
++	.ctrl_s_axis_tuser	(ctrl_s_axis_tuser_sv[NUM_OF_STAGES+1]),
++	.ctrl_s_axis_tkeep	(ctrl_s_axis_tkeep_sv[NUM_OF_STAGES+1]),
++	.ctrl_s_axis_tvalid	(ctrl_s_axis_tvalid_sv[NUM_OF_STAGES+1]),
++	.ctrl_s_axis_tlast	(ctrl_s_axis_tlast_sv[NUM_OF_STAGES+1])
++);
++
++
++logic first_beat;
 +
 +always_ff @(posedge clk) begin
 +    if (~aresetn) begin
@@ -4941,6 +5095,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_men
 +
 +        s_vlan_id_sv <= 0;
 +        s_vlan_id_valid_sv <= 0;
++        
++        first_beat <= 0;
 +    end
 +    else begin
 +        stg0_phv_in_valid_sv <= stg0_phv_in_valid;
@@ -4952,15 +5108,15 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_men
 +        s_axis_tkeep_r <= s_axis_tkeep;
 +        s_axis_tuser_r <= s_axis_tuser;
 +        s_axis_tvalid_r <= s_axis_tvalid & s_axis_tready;
-+        s_axis_tready <= &{stg_ready, s_axis_tready_r};
++        s_axis_tready <= &{stg_ready, s_axis_tready_r} & (~s_axis_tlast) | (s_axis_tlast & ~first_beat);
 +        s_axis_tlast_r <= s_axis_tlast;
 +        
-+	    m_axis_tdata <= m_axis_tdata_r;
-+        m_axis_tkeep <= m_axis_tkeep_r;
-+        m_axis_tuser <= m_axis_tuser_r;
-+        m_axis_tvalid <= m_axis_tvalid_r;
++	    m_axis_tdata <= m_axis_tdata_r[switch_out];
++        m_axis_tkeep <= m_axis_tkeep_r[switch_out];
++        m_axis_tuser <= m_axis_tuser_r[switch_out];
++        m_axis_tvalid <= m_axis_tvalid_r[switch_out];
 +        m_axis_tready_r <= m_axis_tready;
-+        m_axis_tlast <= m_axis_tlast_r;
++        m_axis_tlast <= m_axis_tlast_r[switch_out];
 +        
 +        vlan_drop_flags_r <= vlan_drop_flags;
 +        ctrl_token <= ctrl_token_r;
@@ -4973,13 +5129,15 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_men
 +
 +        s_vlan_id_sv <= s_vlan_id;
 +        s_vlan_id_valid_sv <= s_vlan_id_valid;
++        
++        first_beat <= ~s_axis_tvalid;
 +    end
 +end
 +
 +endmodule
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/stage.v parametric_menshen/stage.v
---- menshen/stage.v	2025-05-06 16:14:21.369210056 +0200
-+++ parametric_menshen/stage.v	2025-05-06 16:24:50.217223027 +0200
+--- menshen/stage.v
++++ parametric_menshen/stage.v
 @@ -3,12 +3,13 @@
  module stage #(
      parameter C_S_AXIS_DATA_WIDTH = 512,
@@ -5043,8 +5201,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/stage.v parametric_menshen/st
      .clk(axis_clk),
      .rst_n(aresetn),
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/tb/tb_rmt_wrapper.v parametric_menshen/tb/tb_rmt_wrapper.v
---- menshen/tb/tb_rmt_wrapper.v	2025-05-06 16:14:21.370210057 +0200
-+++ parametric_menshen/tb/tb_rmt_wrapper.v	2025-05-06 16:13:52.982209471 +0200
+--- menshen/tb/tb_rmt_wrapper.v
++++ parametric_menshen/tb/tb_rmt_wrapper.v
 @@ -61,396 +61,628 @@
      s_axis_tvalid <= 1'b0;
      s_axis_tlast <= 1'b0;
@@ -5889,8 +6047,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/tb/tb_rmt_wrapper.v parametri
  
  rmt_wrapper #(
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/tcl/proj_pkt_gen.tcl parametric_menshen/tcl/proj_pkt_gen.tcl
---- menshen/tcl/proj_pkt_gen.tcl	2025-05-06 16:14:21.370210057 +0200
-+++ parametric_menshen/tcl/proj_pkt_gen.tcl	2025-05-06 16:13:52.983209471 +0200
+--- menshen/tcl/proj_pkt_gen.tcl
++++ parametric_menshen/tcl/proj_pkt_gen.tcl
 @@ -2,14 +2,12 @@
  set sim_top tb/tb_pkt_gen.v
  set device xcu250-figd2104-2-e
@@ -5916,8 +6074,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/tcl/proj_pkt_gen.tcl parametr
  read_verilog "./last_stage.v"
  read_verilog "./output_arbiter.v"
 diff -ruN '--exclude=.git' '--exclude=p4c' menshen/tcl/proj_sim.tcl parametric_menshen/tcl/proj_sim.tcl
---- menshen/tcl/proj_sim.tcl	2025-05-06 16:14:21.370210057 +0200
-+++ parametric_menshen/tcl/proj_sim.tcl	2025-05-06 16:24:50.217223027 +0200
+--- menshen/tcl/proj_sim.tcl
++++ parametric_menshen/tcl/proj_sim.tcl
 @@ -2,22 +2,14 @@
  set sim_top tb/tb_rmt_wrapper.v
  set device xcu250-figd2104-2-e
@@ -6025,7 +6183,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/tcl/proj_sim.tcl parametric_m
  set_property include_dirs ${proj_dir} [get_filesets sim_1]
  set_property simulator_language Mixed [current_project]
  set_property verilog_define { {SIMULATION=1} } [get_filesets sim_1]
-@@ -140,4 +160,6 @@
+@@ -140,4 +159,6 @@
  launch_simulation -simset sim_1 -mode behavioral
  run 10us
  
