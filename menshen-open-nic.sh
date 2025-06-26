@@ -20,9 +20,15 @@ mv rmtv2 menshen
 
 implementation="impl"
 if [[ "$1" == "$implementation" ]];
-then
+then  # the implementation patch uses the L4 port as the key for isolation
     patch -s -p0 < patch_files/menshen_impl.patch
-else
+    cp pipeline_tbs/no_vlan_tests/tb_rmt_wrapper_calc.sv menshen/tb/
+    cp pipeline_tbs/no_vlan_tests/tb_rmt_wrapper_drop.sv menshen/tb/
+    cp pipeline_tbs/no_vlan_tests/tb_rmt_wrapper_modules.sv menshen/tb/
+    cp pipeline_tbs/no_vlan_tests/tb_rmt_wrapper_stages.sv menshen/tb/
+    cp pipeline_tbs/no_vlan_tests/tb_rmt_wrapper_moreStages.sv menshen/tb/
+    cp pipeline_tbs/no_vlan_tests/tb_rmt_wrapper_throughput.sv menshen/tb/
+else  # the implementation patch uses the VLAN ID as the key for isolation
     patch -s -p0 < patch_files/menshen_sim.patch
     cp pipeline_tbs/tb_rmt_wrapper_calc.sv menshen/tb/
     cp pipeline_tbs/tb_rmt_wrapper_drop.sv menshen/tb/

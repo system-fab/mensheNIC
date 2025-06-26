@@ -1,16 +1,84 @@
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/action/action_engine.v parametric_menshen/action/action_engine.v
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/action/action_engine.v parametric_menshen/action/action_engine.v
 --- menshen/action/action_engine.v
 +++ parametric_menshen/action/action_engine.v
-@@ -88,7 +88,7 @@
+@@ -88,7 +88,8 @@
  reg							page_tbl_out_valid, page_tbl_out_valid_next;
  // reg							page_tbl_out_valid_d1;
  // output from ram
 -wire [15:0]					page_tbl_out;
 +reg [15:0]					page_tbl_out;
++wire [15:0]                 page_tbl_out_r;
  // reg [15:0]					page_tbl_out_d1;
  
  /********intermediate variables declared here********/
-@@ -210,11 +210,13 @@
+@@ -100,30 +101,16 @@
+ wire [255:0]				output_md;
+ 
+ 
+-reg [PHV_LEN-1:0]	phv_out_r;
+-reg					phv_valid_out_r;
+-
+-always @(*) begin
+-
+-	phv_out_r = phv_out;
+-	phv_valid_out_r = 0;
+-
+-	if (phv_valid_bit) begin
+-		phv_valid_out_r = 1;
+-		phv_out_r = {output_6B[7], output_6B[6], output_6B[5], output_6B[4], output_6B[3], output_6B[2], output_6B[1], output_6B[0],
+-				output_4B[7], output_4B[6], output_4B[5], output_4B[4], output_4B[3], output_4B[2], output_4B[1], output_4B[0],
+-				output_2B[7], output_2B[6], output_2B[5], output_2B[4], output_2B[3], output_2B[2], output_2B[1], output_2B[0], output_md};
+-	end
+-end
+-
+ always @(posedge clk) begin
+ 	if (~rst_n) begin
+ 		phv_out <= 0;
+ 		phv_valid_out <= 0;
+ 	end
+ 	else begin
+-		phv_out <= phv_out_r;
+-		phv_valid_out <= phv_valid_out_r;
++		phv_out <= {output_6B[7], output_6B[6], output_6B[5], output_6B[4], output_6B[3], output_6B[2], output_6B[1], output_6B[0],
++				    output_4B[7], output_4B[6], output_4B[5], output_4B[4], output_4B[3], output_4B[2], output_4B[1], output_4B[0],
++    				output_2B[7], output_2B[6], output_2B[5], output_2B[4], output_2B[3], output_2B[2], output_2B[1], output_2B[0], output_md};
++		phv_valid_out <= phv_valid_bit;
+ 	end
+ end
+ 
+@@ -133,7 +120,6 @@
+ 				EMPTY_1=1,
+ 				FLUSH_VLAN=2;
+ 
+-reg [C_VLANID_WIDTH-1:0]	vlan_out_next;
+ reg							vlan_out_valid_next;
+ reg	[1:0]					state, state_next;
+ 
+@@ -141,14 +127,11 @@
+ always @(*) begin
+ 
+ 	state_next = state;
+-	vlan_out_next = vlan_out;
+ 	vlan_out_valid_next = 0;
+ 
+ 	case (state)
+ 		IDLE: begin
+ 			if (phv_valid_in) begin
+-				vlan_out_next = phv_in[140:129];
+-
+ 				state_next = FLUSH_VLAN;
+ 			end
+ 		end
+@@ -172,7 +155,7 @@
+ 	end
+ 	else begin
+ 		state <= state_next;
+-		vlan_out <= vlan_out_next;
++		vlan_out <= phv_in[140:129];
+ 		vlan_out_valid <= vlan_out_valid_next;
+ 
+ 		// vlan_out_d1 <= vlan_out;
+@@ -210,11 +193,13 @@
  		vlan_fifo_state <= VLAN_FIFO_IDLE;
  		act_vlan_ready <= 1;
  		page_tbl_out_valid <= 0;
@@ -24,7 +92,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/action/action_engine.v parame
  	end
  end
  
-@@ -401,408 +403,191 @@
+@@ -401,408 +386,191 @@
      CONTROL PATH
  */
  
@@ -349,6 +417,24 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/action/action_engine.v parame
 -				end
 -			endcase
 -		end
+-
+-		always @(posedge clk) begin
+-			if (~rst_n) begin
+-				c_state <= IDLE_C;
+-
+-				// control output
+-				c_m_axis_tdata <= 0;
+-				c_m_axis_tuser <= 0;
+-				c_m_axis_tkeep <= 0;
+-				c_m_axis_tlast <= 0;
+-				c_m_axis_tvalid <= 0;
+-				//
+-				c_index <= 0;
+-				c_wr_en <= 0;
+-				c_wr_data <= 0;
+-			end
+-			else begin
+-				c_state <= c_state_next;
 +generate
 +    /****control path for 512b*****/
 +    wire [7:0]          mod_id; //module ID
@@ -513,26 +599,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/action/action_engine.v parame
 +			    end
 +            endcase
  
--		always @(posedge clk) begin
--			if (~rst_n) begin
--				c_state <= IDLE_C;
--
--				// control output
--				c_m_axis_tdata <= 0;
--				c_m_axis_tuser <= 0;
--				c_m_axis_tkeep <= 0;
--				c_m_axis_tlast <= 0;
--				c_m_axis_tvalid <= 0;
--				//
--				c_index <= 0;
--				c_wr_en <= 0;
--				c_wr_data <= 0;
--			end
--			else begin
--				c_state <= c_state_next;
 +        end
 +    end
- 
  
 -				// output ctrl master signals
 -				c_m_axis_tdata <= r_tdata;
@@ -546,7 +614,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/action/action_engine.v parame
 -				c_wr_data <= c_wr_data_next;
 -			end
 -		end
--
+ 
 -		always @(posedge clk) begin
 -			if (~rst_n) begin
 -				// delayed 1 clk
@@ -615,7 +683,102 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/action/action_engine.v parame
  endgenerate
  
  
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/action/alu_2.v parametric_menshen/action/alu_2.v
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/action/alu_1.v parametric_menshen/action/alu_1.v
+--- menshen/action/alu_1.v
++++ parametric_menshen/action/alu_1.v
+@@ -31,70 +31,37 @@
+               extract op1 from pkt header, op2 from action, add(sub) and write back.
+ */
+ 
+-
+-localparam IDLE_S=3'd0, 
+-		   WAIT1_S=3'd1, 
+-		   WAIT2_S=3'd2, 
+-		   WAIT3_S=3'd3, 
+-		   OUTPUT_S=3'd4;
+-
+-reg [2:0]					state, state_next;
+ reg [DATA_WIDTH-1:0]		container_out_r;
+ reg							container_out_valid_next;
+ 
+-always @(*) begin
+-	state_next = state;
+-	container_out_r = container_out;
+-	container_out_valid_next = 0;
+-
+-	case (state)
+-		IDLE_S: begin
+-			if (action_valid) begin
+-				state_next = OUTPUT_S;
+-				case(action_in[24:21])
+-            	    4'b0001, 4'b1001: begin
+-            	        container_out_r = operand_1_in + operand_2_in;
+-            	    end
+-            	    4'b0010, 4'b1010: begin
+-            	        container_out_r = operand_1_in - operand_2_in;
+-            	    end
+-					4'b1110: begin
+-						container_out_r = operand_2_in;
+-					end
+-            	    //if its an empty (default) action
+-            	    default: begin
+-            	        container_out_r = operand_1_in;
+-            	    end
+-            	endcase
+-			end
+-		end
+-		WAIT1_S: begin
+-			// empty cycle
+-			state_next = WAIT2_S;
+-		end
+-		WAIT2_S: begin
+-			state_next = WAIT3_S;
+-		end
+-		WAIT3_S: begin
+-			state_next = OUTPUT_S;
+-		end
+-		OUTPUT_S: begin
+-			container_out_valid_next = 1;
+-			state_next = IDLE_S;
+-		end
+-	endcase
+-end
+-
+-always @(posedge clk or negedge rst_n) begin
++always @(posedge clk) begin
+ 	if (~rst_n) begin
+ 		container_out <= 0;
+ 		container_out_valid <= 0;
+-		state <= IDLE_S;
++		
++		container_out_r <= 0;
++		container_out_valid_next <= 0;
+ 	end
+ 	else begin
+-		state <= state_next;
+ 		container_out_valid <= container_out_valid_next;
+ 		container_out <= container_out_r;
++		
++		container_out_valid_next <= action_valid;
++		case(action_in[24:21])
++    	    4'b0001, 4'b1001: begin
++    	        container_out_r <= operand_1_in + operand_2_in;
++    	    end
++    	    4'b0010, 4'b1010: begin
++    	        container_out_r <= operand_1_in - operand_2_in;
++    	    end
++			4'b1110: begin
++				container_out_r <= operand_2_in;
++			end
++    	    //if its an empty (default) action
++    	    default: begin
++    	        container_out_r <= operand_1_in;
++    	    end
++    	endcase
+ 	end
+ end
+ 
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/action/alu_2.v parametric_menshen/action/alu_2.v
 --- menshen/action/alu_2.v
 +++ parametric_menshen/action/alu_2.v
 @@ -122,7 +122,7 @@
@@ -627,7 +790,100 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/action/alu_2.v parametric_men
  
                  
                  case(action_in[24:21])
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/action/crossbar.v parametric_menshen/action/crossbar.v
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/action/alu_3.v parametric_menshen/action/alu_3.v
+--- menshen/action/alu_3.v
++++ parametric_menshen/action/alu_3.v
+@@ -36,69 +36,37 @@
+     
+ */
+ 
+-localparam IDLE_S=3'd0,
+-		   WAIT1_S=3'd1,
+-		   WAIT2_S=3'd2, 
+-		   WAIT3_S=3'd3, 
+-		   OUTPUT_S=3'd4;
+-
+-reg [2:0]						state, state_next;
+ reg [META_LEN-1:0]		comp_meta_data_out_r;
+ reg								comp_meta_data_valid_next;
+ 
+-always @(*) begin
+-	state_next = state;
+-	comp_meta_data_out_r = comp_meta_data_out;
+-	comp_meta_data_valid_next = 0;
+-
+-	case (state)
+-		IDLE_S: begin
+-			if (action_valid_in) begin
+-				state_next = OUTPUT_S;
+-				case(action_in[24:21])
+-            	    4'b1100: begin // dst_port
+-            	        comp_meta_data_out_r[255:32] = {action_in[10:5],comp_meta_data_in[249:32]};
+-            	        comp_meta_data_out_r[31:24]  = action_in[20:13];
+-            	        comp_meta_data_out_r[23:0]   = comp_meta_data_in[23:0];
+-            	    end
+-            	    4'b1101: begin // discard
+-            	        comp_meta_data_out_r[255:129] = {action_in[10:5],comp_meta_data_in[249:129]};
+-            	        comp_meta_data_out_r[128] = action_in[12];
+-            	        comp_meta_data_out_r[127:0] = comp_meta_data_in[127:0];
+-            	    end
+-            	    default: begin
+-            	        comp_meta_data_out_r = comp_meta_data_in;
+-            	    end
+-            	endcase
+-			end
+-		end
+-		WAIT1_S: begin
+-			// empty cycle
+-			state_next = WAIT2_S;
+-		end
+-		WAIT2_S: begin
+-			state_next = WAIT3_S;
+-		end
+-		WAIT3_S: begin
+-			state_next = OUTPUT_S;
+-		end
+-		OUTPUT_S: begin
+-			comp_meta_data_valid_next = 1;
+-			state_next = IDLE_S;
+-		end
+-	endcase
+-end
+-
+ always @(posedge clk) begin
+ 	if (~rst_n) begin
+ 		comp_meta_data_out <= 0;
+ 		comp_meta_data_valid_out <= 0;
+-		state <= IDLE_S;
++		
++		comp_meta_data_out_r <= 0;
++		comp_meta_data_valid_next <= 0;
+ 	end
+ 	else begin
+-		state <= state_next;
+ 		comp_meta_data_out <= comp_meta_data_out_r;
+ 		comp_meta_data_valid_out <= comp_meta_data_valid_next;
++		
++		comp_meta_data_valid_next <= action_valid_in;
++		case(action_in[24:21])
++    	    4'b1100: begin // dst_port
++    	        comp_meta_data_out_r[255:32] <= {action_in[10:5],comp_meta_data_in[249:32]};
++    	        comp_meta_data_out_r[31:24]  <= action_in[20:13];
++    	        comp_meta_data_out_r[23:0]   <= comp_meta_data_in[23:0];
++    	    end
++    	    4'b1101: begin // discard
++    	        comp_meta_data_out_r[255:129] <= {action_in[10:5],comp_meta_data_in[249:129]};
++    	        comp_meta_data_out_r[128] <= action_in[12];
++    	        comp_meta_data_out_r[127:0] <= comp_meta_data_in[127:0];
++    	    end
++    	    default: begin
++    	        comp_meta_data_out_r <= comp_meta_data_in;
++    	    end
++    	endcase
+ 	end
+ end
+ 
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/action/crossbar.v parametric_menshen/action/crossbar.v
 --- menshen/action/crossbar.v
 +++ parametric_menshen/action/crossbar.v
 @@ -48,71 +48,91 @@
@@ -778,7 +1034,27 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/action/crossbar.v parametric_
  end
  
  localparam IDLE = 0,
-@@ -147,7 +167,7 @@
+@@ -127,18 +147,8 @@
+         // action_full_reg <= 625'b0;
+         // phv_valid_reg <= 1'b0;
+         // action_valid_reg <= 1'b0;
+-        //reset outputs
+         alu_in_valid <= 1'b0;
+-        phv_remain_data <= 256'b0;
+-        //reset all the outputs
+-        alu_in_6B_1 <= 384'b0;
+-        alu_in_6B_2 <= 384'b0;
+-        alu_in_4B_1 <= 256'b0;
+-        alu_in_4B_2 <= 256'b0;
+-        alu_in_4B_3 <= 256'b0;
+-        alu_in_2B_1 <= 128'b0;
+-        alu_in_2B_2 <= 128'b0;
+-       
++        
+ 		state <= IDLE;
+ 		ready_out <= 1;
+     end
+@@ -147,7 +157,7 @@
  		case (state) 
  			IDLE: begin
  
@@ -787,19 +1063,250 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/action/crossbar.v parametric_
  					if (ready_in) begin
  						alu_in_valid <= 1'b1;
  					end
-@@ -239,7 +259,7 @@
-         		    end
-         		    
-         		    //the left is metadata & conditional ins, no need to modify
+@@ -155,93 +165,8 @@
+ 						ready_out <= 0;
+ 						state <= HALT;
+ 					end
+-        		    //assign values one by one (of course need to consider act format)
+-        		    for(i=7; i>=0; i=i-1) begin
+-        		        case(sub_action[16+i+1][24:21])
+-        		            //be noted that 2 ops need to be the same width
+-        		            4'b0001, 4'b0010: begin
+-        		                alu_in_6B_1[(i+1)*width_6B-1 -: width_6B] <= cont_6B[sub_action[16+i+1][18:16]];
+-        		                alu_in_6B_2[(i+1)*width_6B-1 -: width_6B] <= cont_6B[sub_action[16+i+1][13:11]];
+-        		            end
+-        		            //extracted from action field (imm)
+-        		            4'b1001, 4'b1010: begin
+-        		                alu_in_6B_1[(i+1)*width_6B-1 -: width_6B] <= cont_6B[sub_action[16+i+1][18:16]];
+-        		                alu_in_6B_2[(i+1)*width_6B-1 -: width_6B] <= {32'b0,sub_action[16+i+1][15:0]};
+-        		            end
+-							// set operation, operand A set to 0, operand B set to imm
+-							4'b1110: begin
+-        		                alu_in_6B_1[(i+1)*width_6B-1 -: width_6B] <= 48'b0;
+-        		                alu_in_6B_2[(i+1)*width_6B-1 -: width_6B] <= {32'b0,sub_action[16+i+1][15:0]};
+-							end
+-        		            //if there is no action to take, output the original value
+-        		            default: begin
+-        		                //alu_1 should be set to the phv value
+-        		                alu_in_6B_1[(i+1)*width_6B-1 -: width_6B] <= cont_6B[i];
+-        		                alu_in_6B_2[(i+1)*width_6B-1 -: width_6B] <= 48'b0;
+-        		            end
+-        		        endcase
+-        		    end
+-        		    //4B is a bit of differernt from 2B and 6B
+-        		    for(i=7; i>=0; i=i-1) begin
+-        		        alu_in_4B_3[(i+1)*width_4B-1 -: width_4B] <= cont_4B[i];
+-        		        casez(sub_action[8+i+1][24:21])
+-        		            //be noted that 2 ops need to be the same width
+-        		            4'b0001, 4'b0010: begin
+-        		                alu_in_4B_1[(i+1)*width_4B-1 -: width_4B] <= cont_4B[sub_action[8+i+1][18:16]];
+-        		                alu_in_4B_2[(i+1)*width_4B-1 -: width_4B] <= cont_4B[sub_action[8+i+1][13:11]];
+-        		            end
+-        		            4'b1001, 4'b1010: begin
+-        		                alu_in_4B_1[(i+1)*width_4B-1 -: width_4B] <= cont_4B[sub_action[8+i+1][18:16]];
+-        		                alu_in_4B_2[(i+1)*width_4B-1 -: width_4B] <= {16'b0,sub_action[8+i+1][15:0]};
+-        		            end
+-							// set operation, operand A set to 0, operand B set to imm
+-							4'b1110: begin
+-        		                alu_in_4B_1[(i+1)*width_4B-1 -: width_4B] <= 32'b0;
+-        		                alu_in_4B_2[(i+1)*width_4B-1 -: width_4B] <= {16'b0,sub_action[8+i+1][15:0]};
+-							end
+-        		            //loadd put here
+-        		            4'b1011, 4'b1000, 4'b0111: begin
+-        		                alu_in_4B_1[(i+1)*width_4B-1 -: width_4B] <= cont_4B[sub_action[8+i+1][18:16]];
+-        		                //alu_in_4B_2[(i+1)*width_4B-1 -: width_4B] <= {16'b0,sub_action[8+i+1][15:0]};
+-        		                alu_in_4B_2[(i+1)*width_4B-1 -: width_4B] <= cont_4B[sub_action[8+i+1][13:11]];
+-        		            end
+-        		            //if there is no action to take, output the original value
+-        		            default: begin
+-        		                //alu_1 should be set to the phv value
+-        		                alu_in_4B_1[(i+1)*width_4B-1 -: width_4B] <= cont_4B[i];
+-        		                alu_in_4B_2[(i+1)*width_4B-1 -: width_4B] <= 32'b0;
+-        		            end
+-        		        endcase
+-        		    end
+-        		    for(i=7; i>=0; i=i-1) begin
+-        		        casez(sub_action[i+1][24:21])
+-        		            //be noted that 2 ops need to be the same width
+-        		            4'b0001, 4'b0010: begin
+-        		                alu_in_2B_1[(i+1)*width_2B-1 -: width_2B] <= cont_2B[sub_action[i+1][18:16]];
+-        		                alu_in_2B_2[(i+1)*width_2B-1 -: width_2B] <= cont_2B[sub_action[i+1][13:11]];
+-        		            end
+-        		            4'b1001, 4'b1010: begin
+-        		                alu_in_2B_1[(i+1)*width_2B-1 -: width_2B] <= cont_2B[sub_action[i+1][18:16]];
+-        		                alu_in_2B_2[(i+1)*width_2B-1 -: width_2B] <= sub_action[i+1][15:0];
+-        		            end
+-							// set operation, operand A set to 0, operand B set to imm
+-							4'b1110: begin
+-        		                alu_in_2B_1[(i+1)*width_2B-1 -: width_2B] <= 16'b0;
+-        		                alu_in_2B_2[(i+1)*width_2B-1 -: width_2B] <= sub_action[i+1][15:0];
+-							end
+-        		            //if there is no action to take, output the original value
+-        		            default: begin
+-        		                //alu_1 should be set to the phv value
+-        		                alu_in_2B_1[(i+1)*width_2B-1 -: width_2B] <= cont_2B[i];
+-        		                alu_in_2B_2[(i+1)*width_2B-1 -: width_2B] <= 16'b0;
+-        		            end
+-        		        endcase
+-        		    end
+-        		    
+-        		    //the left is metadata & conditional ins, no need to modify
 -        		    phv_remain_data <= phv_in[255:0];
-+        		    phv_remain_data <= phv_in_r[255:0];
++        		    ///////////////// see second always block for output assignment /////////////////
          		end 
- 
+-
          		else begin
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/depar_do_deparsing.v parametric_menshen/depar_do_deparsing.v
+         		    alu_in_valid <= 1'b0;
+         		end
+@@ -257,4 +182,106 @@
+     end
+ end
+ 
++
++always @(posedge clk) begin
++    if(~rst_n) begin
++        alu_in_6B_1 <= 384'b0;
++        alu_in_6B_2 <= 384'b0;
++        alu_in_4B_1 <= 256'b0;
++        alu_in_4B_2 <= 256'b0;
++        alu_in_4B_3 <= 256'b0;
++        alu_in_2B_1 <= 128'b0;
++        alu_in_2B_2 <= 128'b0;
++        
++        phv_remain_data <= 256'b0;
++    end
++    else begin
++        //assign values one by one (of course need to consider act format)
++        for(i=7; i>=0; i=i-1) begin
++            case(sub_action[16+i+1][24:21])
++                //be noted that 2 ops need to be the same width
++                4'b0001, 4'b0010: begin
++                    alu_in_6B_1[(i+1)*width_6B-1 -: width_6B] <= cont_6B[sub_action[16+i+1][18:16]];
++                    alu_in_6B_2[(i+1)*width_6B-1 -: width_6B] <= cont_6B[sub_action[16+i+1][13:11]];
++                end
++                //extracted from action field (imm)
++                4'b1001, 4'b1010: begin
++                    alu_in_6B_1[(i+1)*width_6B-1 -: width_6B] <= cont_6B[sub_action[16+i+1][18:16]];
++                    alu_in_6B_2[(i+1)*width_6B-1 -: width_6B] <= {32'b0,sub_action[16+i+1][15:0]};
++                end
++                // set operation, operand A set to 0, operand B set to imm
++                4'b1110: begin
++                    alu_in_6B_1[(i+1)*width_6B-1 -: width_6B] <= 48'b0;
++                    alu_in_6B_2[(i+1)*width_6B-1 -: width_6B] <= {32'b0,sub_action[16+i+1][15:0]};
++                end
++                //if there is no action to take, output the original value
++                default: begin
++                    //alu_1 should be set to the phv value
++                    alu_in_6B_1[(i+1)*width_6B-1 -: width_6B] <= cont_6B[i];
++                    alu_in_6B_2[(i+1)*width_6B-1 -: width_6B] <= 48'b0;
++                end
++            endcase
++        end
++        //4B is a bit of differernt from 2B and 6B
++        for(i=7; i>=0; i=i-1) begin
++            alu_in_4B_3[(i+1)*width_4B-1 -: width_4B] <= cont_4B[i];
++            casez(sub_action[8+i+1][24:21])
++                //be noted that 2 ops need to be the same width
++                4'b0001, 4'b0010: begin
++                    alu_in_4B_1[(i+1)*width_4B-1 -: width_4B] <= cont_4B[sub_action[8+i+1][18:16]];
++                    alu_in_4B_2[(i+1)*width_4B-1 -: width_4B] <= cont_4B[sub_action[8+i+1][13:11]];
++                end
++                4'b1001, 4'b1010: begin
++                    alu_in_4B_1[(i+1)*width_4B-1 -: width_4B] <= cont_4B[sub_action[8+i+1][18:16]];
++                    alu_in_4B_2[(i+1)*width_4B-1 -: width_4B] <= {16'b0,sub_action[8+i+1][15:0]};
++                end
++                // set operation, operand A set to 0, operand B set to imm
++                4'b1110: begin
++                    alu_in_4B_1[(i+1)*width_4B-1 -: width_4B] <= 32'b0;
++                    alu_in_4B_2[(i+1)*width_4B-1 -: width_4B] <= {16'b0,sub_action[8+i+1][15:0]};
++                end
++                //loadd put here
++                4'b1011, 4'b1000, 4'b0111: begin
++                    alu_in_4B_1[(i+1)*width_4B-1 -: width_4B] <= cont_4B[sub_action[8+i+1][18:16]];
++                    //alu_in_4B_2[(i+1)*width_4B-1 -: width_4B] <= {16'b0,sub_action[8+i+1][15:0]};
++                    alu_in_4B_2[(i+1)*width_4B-1 -: width_4B] <= cont_4B[sub_action[8+i+1][13:11]];
++                end
++                //if there is no action to take, output the original value
++                default: begin
++                    //alu_1 should be set to the phv value
++                    alu_in_4B_1[(i+1)*width_4B-1 -: width_4B] <= cont_4B[i];
++                    alu_in_4B_2[(i+1)*width_4B-1 -: width_4B] <= 32'b0;
++                end
++            endcase
++        end
++        for(i=7; i>=0; i=i-1) begin
++            casez(sub_action[i+1][24:21])
++                //be noted that 2 ops need to be the same width
++                4'b0001, 4'b0010: begin
++                    alu_in_2B_1[(i+1)*width_2B-1 -: width_2B] <= cont_2B[sub_action[i+1][18:16]];
++                    alu_in_2B_2[(i+1)*width_2B-1 -: width_2B] <= cont_2B[sub_action[i+1][13:11]];
++                end
++                4'b1001, 4'b1010: begin
++                    alu_in_2B_1[(i+1)*width_2B-1 -: width_2B] <= cont_2B[sub_action[i+1][18:16]];
++                    alu_in_2B_2[(i+1)*width_2B-1 -: width_2B] <= sub_action[i+1][15:0];
++                end
++                // set operation, operand A set to 0, operand B set to imm
++                4'b1110: begin
++                    alu_in_2B_1[(i+1)*width_2B-1 -: width_2B] <= 16'b0;
++                    alu_in_2B_2[(i+1)*width_2B-1 -: width_2B] <= sub_action[i+1][15:0];
++                end
++                //if there is no action to take, output the original value
++                default: begin
++                    //alu_1 should be set to the phv value
++                    alu_in_2B_1[(i+1)*width_2B-1 -: width_2B] <= cont_2B[i];
++                    alu_in_2B_2[(i+1)*width_2B-1 -: width_2B] <= 16'b0;
++                end
++            endcase
++        end
++        
++        //the left is metadata & conditional ins, no need to modify
++        phv_remain_data <= phv_in_r[255:0];
++    end
++end
++
+ endmodule
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_deparsing.v parametric_menshen/depar_do_deparsing.v
 --- menshen/depar_do_deparsing.v
 +++ parametric_menshen/depar_do_deparsing.v
-@@ -98,17 +98,39 @@
+@@ -1,22 +1,5 @@
+ `timescale 1ns / 1ps
+ 
+-`define SUB_DEPARSE_1P(idx) \
+-	if(parse_action[idx][0]) begin \
+-		case(sub_depar_val_out_type_d1[idx]) \
+-			2'b01: pkts_tdata_stored_1p_next[parse_action_ind_10b[idx]<<3 +: 16] = sub_depar_val_out_swapped[idx][32+:16]; \
+-			2'b10: pkts_tdata_stored_1p_next[parse_action_ind_10b[idx]<<3 +: 32] = sub_depar_val_out_swapped[idx][16+:32]; \
+-			2'b11: pkts_tdata_stored_1p_next[parse_action_ind_10b[idx]<<3 +: 48] = sub_depar_val_out_swapped[idx][0+:48]; \
+-		endcase \
+-	end \
+-
+-`define SUB_DEPARSE_2P(idx) \
+-	if(parse_action[idx][0]) begin \
+-		case(sub_depar_val_out_type_d1[idx]) \
+-			2'b01: pkts_tdata_stored_2p_next[parse_action_ind_10b[idx]<<3 +: 16] = sub_depar_val_out_swapped[idx][32+:16]; \
+-			2'b10: pkts_tdata_stored_2p_next[parse_action_ind_10b[idx]<<3 +: 32] = sub_depar_val_out_swapped[idx][16+:32]; \
+-			2'b11: pkts_tdata_stored_2p_next[parse_action_ind_10b[idx]<<3 +: 48] = sub_depar_val_out_swapped[idx][0+:48]; \
+-		endcase \
+-	end \
+ 
+ `define SWAP_BYTE_ORDER(idx) \
+ 	assign sub_depar_val_out_swapped[idx] = {	sub_depar_val_out_d1[idx][0+:8], \
+@@ -84,13 +67,7 @@
+ 	input													ctrl_s_axis_tlast
+ );
+ 
+-integer i;
+-
+-reg [C_AXIS_DATA_WIDTH-1:0]						depar_out_tdata_next;
+-reg [C_AXIS_DATA_WIDTH/8-1:0]					depar_out_tkeep_next;
+-reg [C_AXIS_TUSER_WIDTH-1:0]					depar_out_tuser_next;
+-reg												depar_out_tlast_next;
+-reg												depar_out_tvalid_next;
++integer i, j;
+ 
+ wire [159:0] bram_out;
+ reg [159:0] bram_out_d1;
+@@ -98,17 +75,39 @@
  wire [9:0] parse_action_ind_10b [0:9];
  
  
@@ -850,30 +1357,436 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/depar_do_deparsing.v parametr
  
  assign parse_action_ind[0] = parse_action[0][12:6];
  assign parse_action_ind[1] = parse_action[1][12:6];
-@@ -252,11 +274,9 @@
+@@ -177,34 +176,143 @@
+ wire discard_signal;
+ assign discard_signal = phv_fifo_out[128];
+ 
++reg [1:0]                       chunk_index;
++reg [C_AXIS_DATA_WIDTH-1:0]     depar_out_tdata_next[2:0];
++reg [C_AXIS_TUSER_WIDTH-1:0]    depar_out_tuser_next[2:0];
++reg [C_AXIS_DATA_WIDTH/8-1:0]   depar_out_tkeep_next[2:0];
++reg                             depar_out_tlast_next[2:0];
++reg                             depar_out_tvalid_next;
++
++reg [C_AXIS_DATA_WIDTH-1:0]     pkts_tdata_stored [2:0];
++reg [C_AXIS_TUSER_WIDTH-1:0]    pkts_tuser_stored [2:0];
++reg [(C_AXIS_DATA_WIDTH/8)-1:0] pkts_tkeep_stored [2:0];
++reg                             pkts_tlast_stored [2:0];
++
++reg [C_AXIS_DATA_WIDTH-1:0]     temp_pkt_tdata[1:0];
++reg [C_AXIS_DATA_WIDTH-1:0]     mask[1:0];
++
+ localparam		IDLE=0,
+-				WAIT_1CYCLE_RAM=1,
+-				START_SUB_DEPARSE=2,
+-				FINISH_SUB_DEPARSER_0=3,
+-				FINISH_SUB_DEPARSER_1=4,
+-				FINISH_SUB_DEPARSER_2=5,
+-				FLUSH_PKT_0=6,
+-				FLUSH_PKT_1=7,
+-				FLUSH_PKT_2=8,
+-				FLUSH_PKT_3=9,
+-				FLUSH_PKT=10,
+-				DROP_PKT=11,
+-				DROP_PKT_REMAINING=12,
+-				EMPTY_1=13,
+-				EMPTY_2=14;
+-
+-
+-reg [C_AXIS_DATA_WIDTH-1:0]			pkts_tdata_stored_1p, pkts_tdata_stored_2p;
+-reg [C_AXIS_TUSER_WIDTH-1:0]		pkts_tuser_stored_1p, pkts_tuser_stored_2p;
+-reg [(C_AXIS_DATA_WIDTH/8)-1:0]		pkts_tkeep_stored_1p, pkts_tkeep_stored_2p;
+-reg									pkts_tlast_stored_1p, pkts_tlast_stored_2p;
+-reg [C_AXIS_DATA_WIDTH-1:0]			pkts_tdata_stored_1p_next, pkts_tdata_stored_2p_next;
+-reg [C_AXIS_TUSER_WIDTH-1:0]		pkts_tuser_stored_1p_next, pkts_tuser_stored_2p_next;
+-reg [(C_AXIS_DATA_WIDTH/8)-1:0]		pkts_tkeep_stored_1p_next, pkts_tkeep_stored_2p_next;
+-reg									pkts_tlast_stored_1p_next, pkts_tlast_stored_2p_next;
++				WAIT_RAM_1=1,
++				WAIT_RAM_2=2,
++				START_SUB_DEPARSE=3,
++				FINISH_SUB_DEPARSER_0=4,
++				FINISH_SUB_DEPARSER_1=5,
++				FINISH_SUB_DEPARSER_2=6,
++				FLUSH_PKT_0=7,
++				FLUSH_PKT_1=8,
++				FLUSH_PKT_2=9,
++				FLUSH_PKT_3=10,
++				FLUSH_PKT=11,
++				DROP_PKT=12,
++				DROP_PKT_REMAINING=13,
++				EMPTY=14;
+ 
+ reg [4:0] state, state_next;
+ 
++
++always @(posedge clk) begin
++    if(~aresetn) begin
++		state <= IDLE;
++
++        temp_pkt_tdata[0] <= {C_AXIS_DATA_WIDTH{1'b0}};
++        temp_pkt_tdata[1] <= {C_AXIS_DATA_WIDTH{1'b0}};
++		mask[0]            <= {C_AXIS_DATA_WIDTH{1'b1}};
++		mask[1]            <= {C_AXIS_DATA_WIDTH{1'b1}};
++        
++		for (j=0; j<3; j=j+1) begin
++			pkts_tdata_stored[j] <= 0;
++			pkts_tuser_stored[j] <= 0;
++			pkts_tkeep_stored[j] <= 0;
++			pkts_tlast_stored[j] <= 0;
++
++			depar_out_tdata_next[j] <= 0;
++			depar_out_tuser_next[j] <= 0;
++			depar_out_tkeep_next[j] <= 0;
++			depar_out_tlast_next[j] <= 0;
++		end
++
++		depar_out_tdata <= 0;
++        depar_out_tkeep <= 0;
++        depar_out_tuser <= 0;
++        depar_out_tlast <= 0;
++        depar_out_tvalid <= 0;
++	end
++    else begin
++		state <= state_next;
++
++        temp_pkt_tdata[0] <= {C_AXIS_DATA_WIDTH{1'b0}};
++        temp_pkt_tdata[1] <= {C_AXIS_DATA_WIDTH{1'b0}};
++		mask[0]            <= {C_AXIS_DATA_WIDTH{1'b1}};
++		mask[1]            <= {C_AXIS_DATA_WIDTH{1'b1}};
++
++        for (j=0; j<5; j=j+1) begin
++            if(parse_action[j][0] & sub_depar_val_out_valid_d1[j]) begin
++                case(sub_depar_val_out_type_d1[j])
++                    2'b01: begin
++						   temp_pkt_tdata[0][parse_action_ind_10b[j]<<3 +: 16] <= sub_depar_val_out_swapped[j][32+:16];
++						   mask[0][parse_action_ind_10b[j]<<3 +: 16] <= 16'b0;
++					end
++                    2'b10: begin
++						   temp_pkt_tdata[0][parse_action_ind_10b[j]<<3 +: 32] <= sub_depar_val_out_swapped[j][16+:32];
++						   mask[0][parse_action_ind_10b[j]<<3 +: 32] <= 32'b0;
++					end
++                    2'b11: begin
++						   temp_pkt_tdata[0][parse_action_ind_10b[j]<<3 +: 48] <= sub_depar_val_out_swapped[j][0+:48];
++						   mask[0][parse_action_ind_10b[j]<<3 +: 48] <= 48'b0;
++					end
++                endcase
++            end
++            
++            if(parse_action[j+5][0]) begin
++                case(sub_depar_val_out_type_d1[j+5] & sub_depar_val_out_valid_d1[j+5])
++                    2'b01: begin
++						   temp_pkt_tdata[1][parse_action_ind_10b[j+5]<<3 +: 16] <= sub_depar_val_out_swapped[j+5][32+:16];
++						   mask[1][parse_action_ind_10b[j]<<3 +: 16] <= 16'b0;
++					end
++                    2'b10: begin
++						   temp_pkt_tdata[1][parse_action_ind_10b[j+5]<<3 +: 32] <= sub_depar_val_out_swapped[j+5][16+:32];
++						   mask[1][parse_action_ind_10b[j]<<3 +: 32] <= 32'b0;
++					end
++                    2'b11: begin
++						   temp_pkt_tdata[1][parse_action_ind_10b[j+5]<<3 +: 48] <= sub_depar_val_out_swapped[j+5][0+:48];
++						   mask[1][parse_action_ind_10b[j]<<3 +: 48] <= 48'b0;
++					end
++                endcase
++            end
++        end
++
++        pkts_tdata_stored[0] <= (fst_half_fifo_tdata & mask[0]) | temp_pkt_tdata[0];
++        pkts_tuser_stored[0] <= phv_fifo_out[0+:C_AXIS_TUSER_WIDTH];
++        pkts_tkeep_stored[0] <= fst_half_fifo_tkeep;
++        pkts_tlast_stored[0] <= fst_half_fifo_tlast;
++
++        pkts_tdata_stored[1] <= (snd_half_fifo_tdata & mask[1]) | temp_pkt_tdata[1];
++        pkts_tuser_stored[1] <= snd_half_fifo_tuser;
++        pkts_tkeep_stored[1] <= snd_half_fifo_tkeep;
++        pkts_tlast_stored[1] <= snd_half_fifo_tlast;
++        
++        pkts_tdata_stored[2] <= pkt_fifo_tdata;
++        pkts_tuser_stored[2] <= pkt_fifo_tuser;
++        pkts_tkeep_stored[2] <= pkt_fifo_tkeep;
++        pkts_tlast_stored[2] <= pkt_fifo_tlast;
++        
++        
++		for (j=0; j<3; j=j+1) begin
++			depar_out_tdata_next[j] <= pkts_tdata_stored[j];
++			depar_out_tuser_next[j] <= pkts_tuser_stored[j];
++			depar_out_tkeep_next[j] <= pkts_tkeep_stored[j];
++			depar_out_tlast_next[j] <= pkts_tlast_stored[j];
++		end
++
++        depar_out_tdata <= depar_out_tdata_next[chunk_index];
++        depar_out_tkeep <= depar_out_tkeep_next[chunk_index];
++        depar_out_tuser <= depar_out_tuser_next[chunk_index];
++        depar_out_tlast <= depar_out_tlast_next[chunk_index];
++        depar_out_tvalid <= depar_out_tvalid_next;
++    end
++end
++
++
+ always @(*) begin
+ 
+ 	phv_fifo_rd_en = 0;
+@@ -212,37 +320,22 @@
+ 	fst_half_fifo_rd_en = 0;
+ 	snd_half_fifo_rd_en = 0;
+ 	pkt_fifo_rd_en = 0;
+-	// output
+-	depar_out_tdata_next = depar_out_tdata;
+-	depar_out_tuser_next = depar_out_tuser;
+-	depar_out_tkeep_next = depar_out_tkeep;
+-	depar_out_tlast_next = depar_out_tlast;
+ 	depar_out_tvalid_next = 0;
+-
+ 	sub_depar_act_valid = 10'b0;
++	chunk_index = 0;
+ 
+ 	state_next = state;
+-	//
+-	pkts_tdata_stored_1p_next = pkts_tdata_stored_1p;
+-	pkts_tuser_stored_1p_next = pkts_tuser_stored_1p;
+-	pkts_tkeep_stored_1p_next = pkts_tkeep_stored_1p;
+-	pkts_tlast_stored_1p_next = pkts_tlast_stored_1p;
+-	//
+-	pkts_tdata_stored_2p_next = pkts_tdata_stored_2p;
+-	pkts_tuser_stored_2p_next = pkts_tuser_stored_2p;
+-	pkts_tkeep_stored_2p_next = pkts_tkeep_stored_2p;
+-	pkts_tlast_stored_2p_next = pkts_tlast_stored_2p;
+ 
+ 	case (state) 
+ 		IDLE: begin
+ 			if (!vlan_fifo_empty) begin
+-				state_next = WAIT_1CYCLE_RAM;
++				state_next = WAIT_RAM_1;
+ 			end
+ 		end
+-		WAIT_1CYCLE_RAM: begin
+-			state_next = START_SUB_DEPARSE;
++		WAIT_RAM_1: begin
++			state_next = WAIT_RAM_2;
+ 		end
+-		START_SUB_DEPARSE: begin
++		WAIT_RAM_2: begin
+ 			if (!fst_half_fifo_empty 
+ 					&& !snd_half_fifo_empty 
+ 					&& !phv_fifo_empty) begin
+@@ -252,47 +345,45 @@
  					phv_fifo_rd_en = 1;
  				end
  				else begin
 -					sub_depar_act_valid = 10'b1111111111;
 -
 -					state_next = EMPTY_2;
-+					state_next = EMPTY_1;
- 					pkts_tdata_stored_1p_next = fst_half_fifo_tdata;
+-					pkts_tdata_stored_1p_next = fst_half_fifo_tdata;
 -					pkts_tuser_stored_1p_next = phv_fifo_out[0+:128];
-+					pkts_tuser_stored_1p_next = phv_fifo_out[0+:C_AXIS_TUSER_WIDTH];
- 					pkts_tkeep_stored_1p_next = fst_half_fifo_tkeep;
- 					pkts_tlast_stored_1p_next = fst_half_fifo_tlast;
+-					pkts_tkeep_stored_1p_next = fst_half_fifo_tkeep;
+-					pkts_tlast_stored_1p_next = fst_half_fifo_tlast;
++					state_next = START_SUB_DEPARSE;
++					// pkts_tdata_stored_1p_next = fst_half_fifo_tdata;
++					// pkts_tuser_stored_1p_next = phv_fifo_out[0+:C_AXIS_TUSER_WIDTH];
++					// pkts_tkeep_stored_1p_next = fst_half_fifo_tkeep;
++					// pkts_tlast_stored_1p_next = fst_half_fifo_tlast;
  					//
-@@ -264,7 +284,7 @@
+ 				end
  			end
  		end
- 		EMPTY_1: begin
+-		EMPTY_1: begin
 -			// sub_depar_act_valid = 10'b1111111111;
+-			state_next = EMPTY_2;
++		START_SUB_DEPARSE: begin
 +			sub_depar_act_valid = 10'b1111111111;
- 			state_next = EMPTY_2;
++			state_next = EMPTY;
  		end
- 		EMPTY_2: begin
-@@ -430,7 +450,7 @@
+-		EMPTY_2: begin
++		EMPTY: begin
+ 			state_next = FINISH_SUB_DEPARSER_0;
+-			pkts_tdata_stored_2p_next = snd_half_fifo_tdata;
+-			pkts_tuser_stored_2p_next = snd_half_fifo_tuser;
+-			pkts_tkeep_stored_2p_next = snd_half_fifo_tkeep;
+-			pkts_tlast_stored_2p_next = snd_half_fifo_tlast;
++			// pkts_tdata_stored_2p_next = snd_half_fifo_tdata;
++			// pkts_tuser_stored_2p_next = snd_half_fifo_tuser;
++			// pkts_tkeep_stored_2p_next = snd_half_fifo_tkeep;
++			// pkts_tlast_stored_2p_next = snd_half_fifo_tlast;
+ 		end
+ 		FINISH_SUB_DEPARSER_0: begin
+-			`SUB_DEPARSE_1P(0)
+-			`SUB_DEPARSE_1P(1)
+-			`SUB_DEPARSE_2P(5)
++			// `SUB_DEPARSE_1P(0)
++			// `SUB_DEPARSE_1P(1)
++			// `SUB_DEPARSE_2P(5)
+ 
+ 			state_next = FINISH_SUB_DEPARSER_1;
+ 		end
+ 		FINISH_SUB_DEPARSER_1: begin
+-			`SUB_DEPARSE_1P(2)
+-			`SUB_DEPARSE_2P(6)
+-			`SUB_DEPARSE_2P(7)
++			// `SUB_DEPARSE_1P(2)
++			// `SUB_DEPARSE_2P(6)
++			// `SUB_DEPARSE_2P(7)
+ 
+ 			state_next = FINISH_SUB_DEPARSER_2;
+ 		end
+ 		FINISH_SUB_DEPARSER_2: begin
+-			`SUB_DEPARSE_1P(3)
+-			`SUB_DEPARSE_1P(4)
+-			`SUB_DEPARSE_2P(8)
+-			`SUB_DEPARSE_2P(9)
++			// `SUB_DEPARSE_1P(3)
++			// `SUB_DEPARSE_1P(4)
++			// `SUB_DEPARSE_2P(8)
++			// `SUB_DEPARSE_2P(9)
+ 
+ 			state_next = FLUSH_PKT_0;
+ 		end
+@@ -301,15 +392,15 @@
+ 			vlan_fifo_rd_en = 1;
+ 			fst_half_fifo_rd_en = 1;
+ 			snd_half_fifo_rd_en = 1;
+-
+-			depar_out_tdata_next = pkts_tdata_stored_1p;
+-			depar_out_tuser_next = pkts_tuser_stored_1p;
+-			depar_out_tkeep_next = pkts_tkeep_stored_1p;
+-			depar_out_tlast_next = pkts_tlast_stored_1p;
++			chunk_index = 0;
++			// depar_out_tdata_next = pkts_tdata_stored_1p;
++			// depar_out_tuser_next = pkts_tuser_stored_1p;
++			// depar_out_tkeep_next = pkts_tkeep_stored_1p;
++			// depar_out_tlast_next = pkts_tlast_stored_1p;
+ 
+ 			if (depar_out_tready) begin
+ 				depar_out_tvalid_next = 1;
+-				if (pkts_tlast_stored_1p) begin
++				if (pkts_tlast_stored[0]) begin
+ 					state_next = IDLE;
+ 				end
+ 				else begin
+@@ -318,14 +409,15 @@
+ 			end
+ 		end
+ 		FLUSH_PKT_1: begin
+-			depar_out_tdata_next = pkts_tdata_stored_2p;
+-			depar_out_tuser_next = pkts_tuser_stored_2p;
+-			depar_out_tkeep_next = pkts_tkeep_stored_2p;
+-			depar_out_tlast_next = pkts_tlast_stored_2p;
++			chunk_index = 1;
++			// depar_out_tdata_next = pkts_tdata_stored_2p;
++			// depar_out_tuser_next = pkts_tuser_stored_2p;
++			// depar_out_tkeep_next = pkts_tkeep_stored_2p;
++			// depar_out_tlast_next = pkts_tlast_stored_2p;
+ 
+ 			if (depar_out_tready) begin
+ 				depar_out_tvalid_next = 1;
+-				if (pkts_tlast_stored_2p) begin
++				if (pkts_tlast_stored[1]) begin
+ 					state_next = IDLE;
+ 				end
+ 				else begin
+@@ -334,11 +426,12 @@
+ 			end
+ 		end
+ 		FLUSH_PKT: begin
++			chunk_index = 2;
+ 			if (!pkt_fifo_empty) begin
+-				depar_out_tdata_next = pkt_fifo_tdata;
+-				depar_out_tuser_next =  pkt_fifo_tuser;
+-				depar_out_tkeep_next =  pkt_fifo_tkeep;
+-				depar_out_tlast_next =  pkt_fifo_tlast;
++				// depar_out_tdata_next = pkt_fifo_tdata;
++				// depar_out_tuser_next =  pkt_fifo_tuser;
++				// depar_out_tkeep_next =  pkt_fifo_tkeep;
++				// depar_out_tlast_next =  pkt_fifo_tlast;
+ 				if (depar_out_tready) begin
+ 					pkt_fifo_rd_en = 1;
+ 					depar_out_tvalid_next = 1;
+@@ -374,46 +467,46 @@
+ 	endcase
+ end
+ 
+-always @(posedge clk) begin
+-	if (~aresetn) begin
+-		state <= IDLE;
+-		//
+-		pkts_tdata_stored_1p <= 0;
+-		pkts_tuser_stored_1p <= 0;
+-		pkts_tkeep_stored_1p <= 0;
+-		pkts_tlast_stored_1p <= 0;
+-		//
+-		pkts_tdata_stored_2p <= 0;
+-		pkts_tuser_stored_2p <= 0;
+-		pkts_tkeep_stored_2p <= 0;
+-		pkts_tlast_stored_2p <= 0;
+-		//
+-		depar_out_tdata <= 0;
+-		depar_out_tkeep <= 0;
+-		depar_out_tuser <= 0;
+-		depar_out_tlast <= 0;
+-		depar_out_tvalid <= 0;
+-	end
+-	else begin
+-		state <= state_next;
+-		//
+-		pkts_tdata_stored_1p <= pkts_tdata_stored_1p_next;
+-		pkts_tuser_stored_1p <= pkts_tuser_stored_1p_next;
+-		pkts_tkeep_stored_1p <= pkts_tkeep_stored_1p_next;
+-		pkts_tlast_stored_1p <= pkts_tlast_stored_1p_next;
+-		//
+-		pkts_tdata_stored_2p <= pkts_tdata_stored_2p_next;
+-		pkts_tuser_stored_2p <= pkts_tuser_stored_2p_next;
+-		pkts_tkeep_stored_2p <= pkts_tkeep_stored_2p_next;
+-		pkts_tlast_stored_2p <= pkts_tlast_stored_2p_next;
+-		//
+-		depar_out_tdata <= depar_out_tdata_next;
+-		depar_out_tkeep <= depar_out_tkeep_next;
+-		depar_out_tuser <= depar_out_tuser_next;
+-		depar_out_tlast <= depar_out_tlast_next;
+-		depar_out_tvalid <= depar_out_tvalid_next;
+-	end
+-end
++// always @(posedge clk) begin
++// 	if (~aresetn) begin
++// 		state <= IDLE;
++// 		//
++// 		pkts_tdata_stored_1p <= 0;
++// 		pkts_tuser_stored_1p <= 0;
++// 		pkts_tkeep_stored_1p <= 0;
++// 		pkts_tlast_stored_1p <= 0;
++// 		//
++// 		pkts_tdata_stored_2p <= 0;
++// 		pkts_tuser_stored_2p <= 0;
++// 		pkts_tkeep_stored_2p <= 0;
++// 		pkts_tlast_stored_2p <= 0;
++// 		//
++// 		depar_out_tdata <= 0;
++// 		depar_out_tkeep <= 0;
++// 		depar_out_tuser <= 0;
++// 		depar_out_tlast <= 0;
++// 		depar_out_tvalid <= 0;
++// 	end
++// 	else begin
++// 		state <= state_next;
++// 		//
++// 		pkts_tdata_stored_1p <= pkts_tdata_stored_1p_next;
++// 		pkts_tuser_stored_1p <= pkts_tuser_stored_1p_next;
++// 		pkts_tkeep_stored_1p <= pkts_tkeep_stored_1p_next;
++// 		pkts_tlast_stored_1p <= pkts_tlast_stored_1p_next;
++// 		//
++// 		pkts_tdata_stored_2p <= pkts_tdata_stored_2p_next;
++// 		pkts_tuser_stored_2p <= pkts_tuser_stored_2p_next;
++// 		pkts_tkeep_stored_2p <= pkts_tkeep_stored_2p_next;
++// 		pkts_tlast_stored_2p <= pkts_tlast_stored_2p_next;
++// 		//
++// 		depar_out_tdata <= depar_out_tdata_next;
++// 		depar_out_tkeep <= depar_out_tkeep_next;
++// 		depar_out_tuser <= depar_out_tuser_next;
++// 		depar_out_tlast <= depar_out_tlast_next;
++// 		depar_out_tvalid <= depar_out_tvalid_next;
++// 	end
++// end
+ 
+ 
+ //===================== sub deparser
+@@ -430,7 +523,7 @@
  			.aresetn			(aresetn),
  			.parse_act_valid	(sub_depar_act_valid[index]),
  			.parse_act			(parse_action[index][5:0]),
@@ -882,9 +1795,45 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/depar_do_deparsing.v parametr
  			.val_out_valid		(sub_depar_val_out_valid[index]),
  			.val_out			(sub_depar_val_out[index]),
  			.val_out_type		(sub_depar_val_out_type[index])
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/deparser_top.v parametric_menshen/deparser_top.v
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/deparser_top.v parametric_menshen/deparser_top.v
 --- menshen/deparser_top.v
 +++ parametric_menshen/deparser_top.v
+@@ -142,16 +142,16 @@
+ wire [C_AXIS_TUSER_WIDTH-1:0]	seg_fifo_tuser_in, seg_fifo_tuser_out;
+ wire [C_AXIS_DATA_WIDTH/8-1:0]	seg_fifo_tkeep_in, seg_fifo_tkeep_out;
+ wire							seg_fifo_tlast_in, seg_fifo_tlast_out;
+-wire seg_fifo_valid_in;
+-wire seg_fifo_rd_en;
+-wire seg_fifo_full;
+-wire seg_fifo_empty;
+-
+-reg [C_AXIS_DATA_WIDTH-1:0]		seg_fifo_tdata_in_r;
+-reg [C_AXIS_TUSER_WIDTH-1:0]	seg_fifo_tuser_in_r;
+-reg [C_AXIS_DATA_WIDTH/8-1:0]	seg_fifo_tkeep_in_r;
+-reg								seg_fifo_tlast_in_r;
+-reg								seg_fifo_valid_in_r;
++wire                            seg_fifo_valid_in, seg_fifo_rd_en;
++wire                            seg_fifo_full;
++wire                            seg_fifo_empty;
++
++reg [C_AXIS_DATA_WIDTH-1:0]		seg_fifo_tdata_in_r, seg_fifo_tdata_out_r;
++reg [C_AXIS_TUSER_WIDTH-1:0]	seg_fifo_tuser_in_r, seg_fifo_tuser_out_r;
++reg [C_AXIS_DATA_WIDTH/8-1:0]	seg_fifo_tkeep_in_r, seg_fifo_tkeep_out_r;
++reg								seg_fifo_tlast_in_r, seg_fifo_tlast_out_r;
++reg								seg_fifo_valid_in_r, seg_fifo_rd_en_r;
++reg                             seg_fifo_empty_r;
+ // seg fifo
+ fallthrough_small_fifo #(
+ 	.WIDTH(C_AXIS_DATA_WIDTH+C_AXIS_TUSER_WIDTH+C_AXIS_DATA_WIDTH/8+1),
+@@ -163,7 +163,7 @@
+ 	// .din					({seg_fifo_tdata_in, seg_fifo_tuser_in, seg_fifo_tkeep_in, seg_fifo_tlast_in}),
+ 	// .wr_en					(seg_fifo_valid_in),
+ 	//
+-	.rd_en					(seg_fifo_rd_en),
++	.rd_en					(seg_fifo_rd_en_r),
+ 	.dout					({seg_fifo_tdata_out, seg_fifo_tuser_out, seg_fifo_tkeep_out, seg_fifo_tlast_out}),
+ 	//
+ 	.full					(),
 @@ -176,6 +176,7 @@
  
  //
@@ -903,7 +1852,255 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/deparser_top.v parametric_men
  )
  do_deparsing
  (
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/extract/key_extract_top.v parametric_menshen/extract/key_extract_top.v
+@@ -247,11 +249,11 @@
+ 	.snd_half_fifo_empty						(snd_half_fifo_empty),
+ 	.snd_half_fifo_rd_en						(snd_half_fifo_rd_en),
+ 	// segs
+-	.pkt_fifo_tdata								(seg_fifo_tdata_out),
+-	.pkt_fifo_tuser								(seg_fifo_tuser_out),
+-	.pkt_fifo_tkeep								(seg_fifo_tkeep_out),
+-	.pkt_fifo_tlast								(seg_fifo_tlast_out),
+-	.pkt_fifo_empty								(seg_fifo_empty),
++	.pkt_fifo_tdata								(seg_fifo_tdata_out_r),
++	.pkt_fifo_tuser								(seg_fifo_tuser_out_r),
++	.pkt_fifo_tkeep								(seg_fifo_tkeep_out_r),
++	.pkt_fifo_tlast								(seg_fifo_tlast_out_r),
++	.pkt_fifo_empty								(seg_fifo_empty_r),
+ 	.pkt_fifo_rd_en								(seg_fifo_rd_en),
+ 	// output
+ 	.depar_out_tdata							(depar_out_tdata),
+@@ -289,6 +291,13 @@
+ 		seg_fifo_tkeep_in_r <= 0;
+ 		seg_fifo_tlast_in_r <= 0;
+ 		seg_fifo_valid_in_r <= 0;
++		//
++		seg_fifo_tdata_out_r <= 0;
++		seg_fifo_tuser_out_r <= 0;
++		seg_fifo_tkeep_out_r <= 0;
++		seg_fifo_tlast_out_r <= 0;
++		seg_fifo_rd_en_r <= 0;
++		seg_fifo_empty_r <= 0;
+ 	end
+ 	else begin
+ 		//
+@@ -309,6 +318,13 @@
+ 		seg_fifo_tkeep_in_r <= seg_fifo_tkeep_in;
+ 		seg_fifo_tlast_in_r <= seg_fifo_tlast_in;
+ 		seg_fifo_valid_in_r <= seg_fifo_valid_in;
++		//
++		seg_fifo_tdata_out_r <= seg_fifo_tdata_out;
++		seg_fifo_tuser_out_r <= seg_fifo_tuser_out;
++		seg_fifo_tkeep_out_r <= seg_fifo_tkeep_out;
++		seg_fifo_tlast_out_r <= seg_fifo_tlast_out;
++		seg_fifo_rd_en_r <= seg_fifo_rd_en;
++		seg_fifo_empty_r <= seg_fifo_empty;
+ 	end
+ end
+ 
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_wait_segs.v parametric_menshen/depar_wait_segs.v
+--- menshen/depar_wait_segs.v
++++ parametric_menshen/depar_wait_segs.v
+@@ -68,6 +68,12 @@
+ reg vlan_valid_next;
+ reg [11:0] vlan_next;
+ 
++reg         output_fifo_valid_r;
++reg         fst_half_valid_r;
++reg         snd_half_valid_r;
++reg         vlan_valid_r;
++reg [11:0]  vlan_r;
++
+ reg [2:0] state, state_next;
+ 
+ // we delay the processing of PHV to the next module
+@@ -77,52 +83,52 @@
+ 
+ 	pkt_fifo_rd_en = 0;
+ 
+-	fst_half_tdata_next = 0;
+-	fst_half_tuser_next = 0;
+-	fst_half_tkeep_next = 0;
+-	fst_half_tlast_next = 0;
+-
+-	snd_half_tdata_next = 0;
+-	snd_half_tuser_next = 0;
+-	snd_half_tkeep_next = 0;
+-	snd_half_tlast_next = 0;
+-
+-	fst_half_valid_next = 0;
+-	snd_half_valid_next = 0;
+-	vlan_valid_next = 0;
+-	vlan_next = vlan;
+-
+-	// output remaining segs
+-	output_fifo_tdata_next = 0;
+-	output_fifo_tuser_next = 0;
+-	output_fifo_tkeep_next = 0;
+-	output_fifo_tlast_next = 0;
+-	output_fifo_valid_next = 0;
++	// fst_half_tdata_next = 0;
++	// fst_half_tuser_next = 0;
++	// fst_half_tkeep_next = 0;
++	// fst_half_tlast_next = 0;
++
++	// snd_half_tdata_next = 0;
++	// snd_half_tuser_next = 0;
++	// snd_half_tkeep_next = 0;
++	// snd_half_tlast_next = 0;
++
++	// // output remaining segs
++	// output_fifo_tdata_next = 0;
++	// output_fifo_tuser_next = 0;
++	// output_fifo_tkeep_next = 0;
++	// output_fifo_tlast_next = 0;
++
++	output_fifo_valid_r = 0;
++	fst_half_valid_r = 0;
++	snd_half_valid_r = 0;
++	vlan_valid_r = 0;
++	vlan_r = vlan;
+ 
+ 	case (state)
+ 		WAIT_FIRST_SEG: begin
+ 			if (!pkt_fifo_empty) begin
+-				fst_half_tdata_next = pkt_fifo_tdata;
+-				fst_half_tuser_next = pkt_fifo_tuser;
+-				fst_half_tkeep_next = pkt_fifo_tkeep;
+-				fst_half_tlast_next = pkt_fifo_tlast;
++				// fst_half_tdata_next = pkt_fifo_tdata;
++				// fst_half_tuser_next = pkt_fifo_tuser;
++				// fst_half_tkeep_next = pkt_fifo_tkeep;
++				// fst_half_tlast_next = pkt_fifo_tlast;
+ 
+-				vlan_next = pkt_fifo_tdata[116+:12];
++				vlan_r = pkt_fifo_tdata[116+:12];
+ 
+ 				if (pkt_fifo_tlast) begin
+ 					if (fst_half_fifo_ready && snd_half_fifo_ready) begin
+ 						pkt_fifo_rd_en = 1;
+-						fst_half_valid_next = 1;
+-						snd_half_valid_next = 1;
+-						vlan_valid_next = 1;
++						fst_half_valid_r = 1;
++						snd_half_valid_r = 1;
++						vlan_valid_r = 1;
+ 						state_next = WAIT_FIRST_SEG;
+ 					end
+ 				end
+ 				else begin
+ 					if (fst_half_fifo_ready) begin
+ 						pkt_fifo_rd_en = 1;
+-						fst_half_valid_next = 1;
+-						vlan_valid_next = 1;
++						fst_half_valid_r = 1;
++						vlan_valid_r = 1;
+ 						state_next = WAIT_SECOND_SEG;
+ 					end
+ 				end
+@@ -130,23 +136,23 @@
+ 		end
+ 		WAIT_SECOND_SEG: begin
+ 			if (!pkt_fifo_empty) begin
+-				snd_half_tdata_next = pkt_fifo_tdata;
+-				snd_half_tuser_next = pkt_fifo_tuser;
+-				snd_half_tkeep_next = pkt_fifo_tkeep;
+-				snd_half_tlast_next = pkt_fifo_tlast;
++				// snd_half_tdata_next = pkt_fifo_tdata;
++				// snd_half_tuser_next = pkt_fifo_tuser;
++				// snd_half_tkeep_next = pkt_fifo_tkeep;
++				// snd_half_tlast_next = pkt_fifo_tlast;
+ 
+ 
+ 				if (pkt_fifo_tlast) begin
+ 					if (snd_half_fifo_ready) begin
+ 						pkt_fifo_rd_en = 1;
+-						snd_half_valid_next = 1;
++						snd_half_valid_r = 1;
+ 						state_next = WAIT_FIRST_SEG;
+ 					end
+ 				end
+ 				else begin
+ 					if (snd_half_fifo_ready) begin
+ 						pkt_fifo_rd_en = 1;
+-						snd_half_valid_next = 1;
++						snd_half_valid_r = 1;
+ 						state_next = FLUSH_SEG;
+ 					end
+ 				end
+@@ -154,13 +160,13 @@
+ 		end
+ 		FLUSH_SEG: begin
+ 			if (!pkt_fifo_empty) begin
+-				output_fifo_tdata_next = pkt_fifo_tdata;
+-				output_fifo_tuser_next = pkt_fifo_tuser;
+-				output_fifo_tkeep_next = pkt_fifo_tkeep;
+-				output_fifo_tlast_next = pkt_fifo_tlast;
++				// output_fifo_tdata_next = pkt_fifo_tdata;
++				// output_fifo_tuser_next = pkt_fifo_tuser;
++				// output_fifo_tkeep_next = pkt_fifo_tkeep;
++				// output_fifo_tlast_next = pkt_fifo_tlast;
+ 
+ 				if (output_fifo_ready) begin
+-					output_fifo_valid_next = 1;
++					output_fifo_valid_r = 1;
+ 					pkt_fifo_rd_en = 1;
+ 					if (pkt_fifo_tlast) begin
+ 						state_next = WAIT_FIRST_SEG;
+@@ -171,6 +177,53 @@
+ 	endcase
+ end
+ 
++always @(posedge clk) begin
++    if (~aresetn) begin
++        fst_half_tdata_next <= 0;
++        fst_half_tuser_next <= 0;
++        fst_half_tkeep_next <= 0;
++        fst_half_tlast_next <= 0;
++
++        snd_half_tdata_next <= 0;
++        snd_half_tuser_next <= 0;
++        snd_half_tkeep_next <= 0;
++        snd_half_tlast_next <= 0;
++
++        output_fifo_tdata_next <= 0;
++        output_fifo_tuser_next <= 0;
++        output_fifo_tkeep_next <= 0;
++        output_fifo_tlast_next <= 0;
++        
++        output_fifo_valid_next <= 0;
++	    fst_half_valid_next <= 0;
++	    snd_half_valid_next <= 0;
++	    vlan_valid_next <= 0;
++	    vlan_next <= 0;
++    end
++    else begin
++	    fst_half_tdata_next <= pkt_fifo_tdata;
++        fst_half_tuser_next <= pkt_fifo_tuser;
++        fst_half_tkeep_next <= pkt_fifo_tkeep;
++        fst_half_tlast_next <= pkt_fifo_tlast;
++
++        snd_half_tdata_next <= pkt_fifo_tdata;
++        snd_half_tuser_next <= pkt_fifo_tuser;
++        snd_half_tkeep_next <= pkt_fifo_tkeep;
++        snd_half_tlast_next <= pkt_fifo_tlast;
++
++        output_fifo_tdata_next <= pkt_fifo_tdata;
++        output_fifo_tuser_next <= pkt_fifo_tuser;
++        output_fifo_tkeep_next <= pkt_fifo_tkeep;
++        output_fifo_tlast_next <= pkt_fifo_tlast;
++        
++        output_fifo_valid_next <= output_fifo_valid_r;
++	    fst_half_valid_next <= fst_half_valid_r;
++	    snd_half_valid_next <= snd_half_valid_r;
++	    vlan_valid_next <= vlan_valid_r;
++	    vlan_next <= vlan_r;
++    end
++end
++
+ 
+ always @(posedge clk) begin
+ 	if (~aresetn) begin
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/extract/key_extract_top.v parametric_menshen/extract/key_extract_top.v
 --- menshen/extract/key_extract_top.v
 +++ parametric_menshen/extract/key_extract_top.v
 @@ -153,18 +153,6 @@
@@ -1650,30 +2847,226 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/extract/key_extract_top.v par
  endgenerate
  
  //==========================================================
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/extract/key_extract.v parametric_menshen/extract/key_extract.v
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/extract/key_extract.v parametric_menshen/extract/key_extract.v
 --- menshen/extract/key_extract.v
 +++ parametric_menshen/extract/key_extract.v
-@@ -101,6 +101,8 @@
+@@ -39,7 +39,25 @@
+ localparam WIDTH_4B = 32;
+ localparam WIDTH_6B = 48;
+ 
+-//reg [KEY_LEN-1:0] key_out;
++reg [PHV_LEN-1:0] phv_in_r;
++reg               phv_valid_in_r;
++reg [KEY_OFF-1:0] key_offset_w_r;
++reg [KEY_LEN-1:0] key_mask_w_r;
++
++always @(posedge clk) begin
++	if (~rst_n) begin
++		phv_in_r <= 0;
++		phv_valid_in_r <= 0;
++		key_offset_w_r <= 0;
++		key_mask_w_r <= 0;
++	end
++	else begin
++		phv_in_r <= phv_in;
++		phv_valid_in_r <= phv_valid_in;
++		key_offset_w_r <= key_offset_w;
++		key_mask_w_r <= key_mask_w;
++	end
++end
+ 
+ //24 fields to be retrived from the pkt header
+ reg [WIDTH_2B-1:0]		cont_2B [0:7];
+@@ -69,7 +87,7 @@
+ 
+ localparam	IDLE_S=0,
+ 			CYCLE_1=1;
+-reg [2:0] state, state_next;
++reg [2:0] state;
+ 
+ reg [KEY_LEN-1:0] key_out; 
+ // reg ready_out_next;
+@@ -80,94 +98,107 @@
+ 
+ always @(posedge clk) begin
+ 	if (~rst_n) begin
+-		key_out <= 0;
+-
+ 		state <= IDLE_S;
+-
+-
+-		for (i=0; i<8; i=i+1) begin
+-			cont_6B[i] <= 0;
+-			cont_4B[i] <= 0;
+-			cont_2B[i] <= 0;
+-		end
+-
+-		phv_out <= 0;
++		
+ 		phv_valid_out <= 0;
+ 		key_valid_out <= 0;
+-
+-		key_offset_r <= 0;
+-		key_mask_out_r <= 0;
+ 	end
  	else begin
  		case (state)
  			IDLE_S: begin
-+				phv_valid_out <= 0;
+-				if (phv_valid_in) begin
+-					key_offset_r <= key_offset_w;
+-					key_mask_out_r <= key_mask_w;
+-					phv_out <= phv_in;
+-
+-					cont_6B[7] <= phv_in[PHV_LEN-1            -: WIDTH_6B];
+-					cont_6B[6] <= phv_in[PHV_LEN-1-  WIDTH_6B -: WIDTH_6B];
+-					cont_6B[5] <= phv_in[PHV_LEN-1-2*WIDTH_6B -: WIDTH_6B];
+-					cont_6B[4] <= phv_in[PHV_LEN-1-3*WIDTH_6B -: WIDTH_6B];
+-					cont_6B[3] <= phv_in[PHV_LEN-1-4*WIDTH_6B -: WIDTH_6B];
+-					cont_6B[2] <= phv_in[PHV_LEN-1-5*WIDTH_6B -: WIDTH_6B];
+-					cont_6B[1] <= phv_in[PHV_LEN-1-6*WIDTH_6B -: WIDTH_6B];
+-					cont_6B[0] <= phv_in[PHV_LEN-1-7*WIDTH_6B -: WIDTH_6B];
+-
+-					cont_4B[7] <= phv_in[PHV_LEN-1-8*WIDTH_6B            -: WIDTH_4B];
+-					cont_4B[6] <= phv_in[PHV_LEN-1-8*WIDTH_6B-  WIDTH_4B -: WIDTH_4B];
+-					cont_4B[5] <= phv_in[PHV_LEN-1-8*WIDTH_6B-2*WIDTH_4B -: WIDTH_4B];
+-					cont_4B[4] <= phv_in[PHV_LEN-1-8*WIDTH_6B-3*WIDTH_4B -: WIDTH_4B];
+-					cont_4B[3] <= phv_in[PHV_LEN-1-8*WIDTH_6B-4*WIDTH_4B -: WIDTH_4B];
+-					cont_4B[2] <= phv_in[PHV_LEN-1-8*WIDTH_6B-5*WIDTH_4B -: WIDTH_4B];
+-					cont_4B[1] <= phv_in[PHV_LEN-1-8*WIDTH_6B-6*WIDTH_4B -: WIDTH_4B];
+-					cont_4B[0] <= phv_in[PHV_LEN-1-8*WIDTH_6B-7*WIDTH_4B -: WIDTH_4B];
+-
+-					cont_2B[7] <= phv_in[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B            -: WIDTH_2B];
+-					cont_2B[6] <= phv_in[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-  WIDTH_2B -: WIDTH_2B];
+-					cont_2B[5] <= phv_in[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-2*WIDTH_2B -: WIDTH_2B];
+-					cont_2B[4] <= phv_in[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-3*WIDTH_2B -: WIDTH_2B];
+-					cont_2B[3] <= phv_in[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-4*WIDTH_2B -: WIDTH_2B];
+-					cont_2B[2] <= phv_in[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-5*WIDTH_2B -: WIDTH_2B];
+-					cont_2B[1] <= phv_in[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-6*WIDTH_2B -: WIDTH_2B];
+-					cont_2B[0] <= phv_in[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-7*WIDTH_2B -: WIDTH_2B];
+-
++			    phv_valid_out <= 0;
 +				key_valid_out <= 0;
- 				if (phv_valid_in) begin
- 					key_offset_r <= key_offset_w;
- 					key_mask_out_r <= key_mask_w;
-@@ -135,10 +137,6 @@
- 
++				if (phv_valid_in_r)
  					state <= CYCLE_1;
- 				end
+-				end
 -				else begin
 -					phv_valid_out <= 0;
 -					key_valid_out <= 0;
 -				end
++				else
++					state <= IDLE_S;
  			end
  			CYCLE_1: begin
- 				key_out[KEY_LEN-1                                     -: WIDTH_6B] <= cont_6B[key_offset_r[KEY_OFF-1     -: 3]];
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/last_stage.v parametric_menshen/last_stage.v
+-				key_out[KEY_LEN-1                                     -: WIDTH_6B] <= cont_6B[key_offset_r[KEY_OFF-1     -: 3]];
+-				key_out[KEY_LEN-1- 1*WIDTH_6B                         -: WIDTH_6B] <= cont_6B[key_offset_r[KEY_OFF-1-1*3 -: 3]];
+-				key_out[KEY_LEN-1- 2*WIDTH_6B                         -: WIDTH_4B] <= cont_4B[key_offset_r[KEY_OFF-1-2*3 -: 3]];
+-				key_out[KEY_LEN-1- 2*WIDTH_6B - 1*WIDTH_4B            -: WIDTH_4B] <= cont_4B[key_offset_r[KEY_OFF-1-3*3 -: 3]];
+-				key_out[KEY_LEN-1- 2*WIDTH_6B - 2*WIDTH_4B            -: WIDTH_2B] <= cont_2B[key_offset_r[KEY_OFF-1-4*3 -: 3]];
+-				key_out[KEY_LEN-1- 2*WIDTH_6B - 2*WIDTH_4B - WIDTH_2B -: WIDTH_2B] <= cont_2B[key_offset_r[KEY_OFF-1-5*3 -: 3]];
+-
+-				case(com_op[19:18])
+-					2'b00: begin
+-						key_out[0] <= (com_op_1>com_op_2)?1'b1:1'b0;
+-					end
+-					2'b01: begin
+-						key_out[0] <= (com_op_1>=com_op_2)?1'b1:1'b0;
+-					end
+-					2'b10: begin
+-						key_out[0] <= (com_op_1==com_op_2)?1'b1:1'b0;
+-					end
+-					default: begin
+-						key_out[0] <= 1'b1;
+-					end
+-				endcase
+ 				phv_valid_out <= 1;
+ 				key_valid_out <= 1;
+ 
+ 				state <= IDLE_S;
+ 			end
++			default: begin
++				phv_valid_out <= 0;
++				key_valid_out <= 0;
++				state <= IDLE_S;
++			end
++		endcase
++	end
++end
++
++reg [PHV_LEN-1:0] phv_out_r;    // register used to wait 1 cycle for the result
++always @(posedge clk) begin
++	if (~rst_n) begin
++	    phv_out_r <= 0;
++	    phv_out <= 0;
++	    
++	    for (i=0; i<8; i=i+1) begin
++			cont_6B[i] <= 0;
++			cont_4B[i] <= 0;
++			cont_2B[i] <= 0;
++		end
++		key_out <= 0;
++		
++		key_offset_r <= 0;
++		key_mask_out_r <= 0;
++	end
++	else begin
++	    phv_out_r <= phv_in_r;
++	    phv_out <= phv_out_r;
++	    
++	    cont_6B[7] <= phv_in_r[PHV_LEN-1            -: WIDTH_6B];
++		cont_6B[6] <= phv_in_r[PHV_LEN-1-  WIDTH_6B -: WIDTH_6B];
++		cont_6B[5] <= phv_in_r[PHV_LEN-1-2*WIDTH_6B -: WIDTH_6B];
++		cont_6B[4] <= phv_in_r[PHV_LEN-1-3*WIDTH_6B -: WIDTH_6B];
++		cont_6B[3] <= phv_in_r[PHV_LEN-1-4*WIDTH_6B -: WIDTH_6B];
++		cont_6B[2] <= phv_in_r[PHV_LEN-1-5*WIDTH_6B -: WIDTH_6B];
++		cont_6B[1] <= phv_in_r[PHV_LEN-1-6*WIDTH_6B -: WIDTH_6B];
++		cont_6B[0] <= phv_in_r[PHV_LEN-1-7*WIDTH_6B -: WIDTH_6B];
++
++		cont_4B[7] <= phv_in_r[PHV_LEN-1-8*WIDTH_6B            -: WIDTH_4B];
++		cont_4B[6] <= phv_in_r[PHV_LEN-1-8*WIDTH_6B-  WIDTH_4B -: WIDTH_4B];
++		cont_4B[5] <= phv_in_r[PHV_LEN-1-8*WIDTH_6B-2*WIDTH_4B -: WIDTH_4B];
++		cont_4B[4] <= phv_in_r[PHV_LEN-1-8*WIDTH_6B-3*WIDTH_4B -: WIDTH_4B];
++		cont_4B[3] <= phv_in_r[PHV_LEN-1-8*WIDTH_6B-4*WIDTH_4B -: WIDTH_4B];
++		cont_4B[2] <= phv_in_r[PHV_LEN-1-8*WIDTH_6B-5*WIDTH_4B -: WIDTH_4B];
++		cont_4B[1] <= phv_in_r[PHV_LEN-1-8*WIDTH_6B-6*WIDTH_4B -: WIDTH_4B];
++		cont_4B[0] <= phv_in_r[PHV_LEN-1-8*WIDTH_6B-7*WIDTH_4B -: WIDTH_4B];
++
++		cont_2B[7] <= phv_in_r[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B            -: WIDTH_2B];
++		cont_2B[6] <= phv_in_r[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-  WIDTH_2B -: WIDTH_2B];
++		cont_2B[5] <= phv_in_r[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-2*WIDTH_2B -: WIDTH_2B];
++		cont_2B[4] <= phv_in_r[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-3*WIDTH_2B -: WIDTH_2B];
++		cont_2B[3] <= phv_in_r[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-4*WIDTH_2B -: WIDTH_2B];
++		cont_2B[2] <= phv_in_r[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-5*WIDTH_2B -: WIDTH_2B];
++		cont_2B[1] <= phv_in_r[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-6*WIDTH_2B -: WIDTH_2B];
++		cont_2B[0] <= phv_in_r[PHV_LEN-1-8*WIDTH_6B-8*WIDTH_4B-7*WIDTH_2B -: WIDTH_2B];
++		
++		key_out[KEY_LEN-1                                     -: WIDTH_6B] <= cont_6B[key_offset_r[KEY_OFF-1     -: 3]];
++		key_out[KEY_LEN-1- 1*WIDTH_6B                         -: WIDTH_6B] <= cont_6B[key_offset_r[KEY_OFF-1-1*3 -: 3]];
++		key_out[KEY_LEN-1- 2*WIDTH_6B                         -: WIDTH_4B] <= cont_4B[key_offset_r[KEY_OFF-1-2*3 -: 3]];
++		key_out[KEY_LEN-1- 2*WIDTH_6B - 1*WIDTH_4B            -: WIDTH_4B] <= cont_4B[key_offset_r[KEY_OFF-1-3*3 -: 3]];
++		key_out[KEY_LEN-1- 2*WIDTH_6B - 2*WIDTH_4B            -: WIDTH_2B] <= cont_2B[key_offset_r[KEY_OFF-1-4*3 -: 3]];
++		key_out[KEY_LEN-1- 2*WIDTH_6B - 2*WIDTH_4B - WIDTH_2B -: WIDTH_2B] <= cont_2B[key_offset_r[KEY_OFF-1-5*3 -: 3]];
++		
++		case(com_op[19:18])
++			2'b00: begin
++				key_out[0] <= (com_op_1>com_op_2)?1'b1:1'b0;
++			end
++			2'b01: begin
++				key_out[0] <= (com_op_1>=com_op_2)?1'b1:1'b0;
++			end
++			2'b10: begin
++				key_out[0] <= (com_op_1==com_op_2)?1'b1:1'b0;
++			end
++			default: begin
++				key_out[0] <= 1'b1;
++			end
+ 		endcase
++		
++		key_offset_r <= key_offset_w_r;
++		key_mask_out_r <= key_mask_w_r;
+ 	end
+ end
+ 
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/last_stage.v parametric_menshen/last_stage.v
 --- menshen/last_stage.v
 +++ parametric_menshen/last_stage.v
 @@ -4,13 +4,14 @@
@@ -1810,7 +3203,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/last_stage.v parametric_mensh
  	end
  end
  
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_cam_part.v parametric_menshen/lookup/lke_cam_part.v
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/lookup/lke_cam_part.v parametric_menshen/lookup/lke_cam_part.v
 --- menshen/lookup/lke_cam_part.v
 +++ parametric_menshen/lookup/lke_cam_part.v
 @@ -8,7 +8,8 @@
@@ -2807,7 +4200,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_cam_part.v paramet
  endgenerate
  
  endmodule
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_ram_part.v parametric_menshen/lookup/lke_ram_part.v
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/lookup/lke_ram_part.v parametric_menshen/lookup/lke_ram_part.v
 --- menshen/lookup/lke_ram_part.v
 +++ parametric_menshen/lookup/lke_ram_part.v
 @@ -71,7 +71,7 @@
@@ -2819,7 +4212,55 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_ram_part.v paramet
  
  always @(posedge clk or negedge rst_n) begin
  
-@@ -164,10 +164,6 @@
+@@ -89,24 +89,21 @@
+     end
+ 
+     else begin
++        phv_out <= phv_reg;
++        act_vlan_out <= vlan_id;
++        action_valid <= 1'b0;
++
+         case(lookup_state)
+             IDLE_S: begin
+                 if (phv_valid == 1'b1) begin
++                    lookup_state <= WAIT1_S;
+ 					// ready_out <= 1'b0;
+-                    phv_reg <= phv_in;
+-					act_vlan_out <= vlan_id;
++					phv_reg <= phv_in;
++					act_vlan_out_valid <= act_vlan_ready;
+ 					if_match_d1 <= if_match;
+-
+-					if (act_vlan_ready) begin
+-						act_vlan_out_valid <= 1;
+-					end
+-
+-					lookup_state <= WAIT1_S;
+                 end
+                 else begin
+ 					// ready_out <= 1'b1;
+-                    lookup_state <= IDLE_S;
+-					action_valid <= 1'b0;
+ 					act_vlan_out_valid <= 0;
+ 					if_match_d1 <= 0;
+                 end
+@@ -117,7 +114,6 @@
+ 					act_vlan_out_valid <= 0;
+ 					action_valid <= 1'b1;
+ 					// ready_out <= 1'b1;
+-					phv_out <= phv_reg;
+ 					lookup_state <= IDLE_S;
+ 				end
+ 				else begin
+@@ -129,7 +125,6 @@
+ 					act_vlan_out_valid <= 0;
+ 					action_valid <= 1'b1;
+ 					// ready_out <= 1'b1;
+-					phv_out <= phv_reg;
+ 					lookup_state <= IDLE_S;
+ 				end
+ 			end
+@@ -164,10 +159,6 @@
  
  reg [2:0]           c_state;
  
@@ -2830,7 +4271,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_ram_part.v paramet
  
  localparam IDLE_C = 0,
             PARSE_C = 1,
-@@ -178,134 +174,113 @@
+@@ -178,134 +169,113 @@
             ACT_TMP_ENTRY = 6,
  		   FLUSH_REST_C = 7;
  
@@ -2924,8 +4365,6 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_ram_part.v paramet
 -                c_m_axis_tkeep <= 0;
 -                c_m_axis_tvalid <= 0;
 -                c_m_axis_tlast <= 0;
--
--                c_state <= IDLE_C;
 +generate
 +    assign mod_id = c_s_axis_tdata[368+:8];
 +    assign resv   = c_s_axis_tdata[376+:4];
@@ -3016,9 +4455,11 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_ram_part.v paramet
 +            c_m_axis_tvalid <= 0;
 +            c_m_axis_tlast <= 0;
  
--            end
+-                c_state <= IDLE_C;
 +            c_state <= IDLE_C;
  
+-            end
+-
 -            else begin
 -                case(c_state)
 -                    IDLE_C: begin
@@ -3068,7 +4509,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_ram_part.v paramet
                          else begin
                              c_index_cam <= 0;
                              c_wr_en_cam <= 0;
-@@ -316,316 +291,95 @@
+@@ -316,316 +286,95 @@
                              act_entry_tmp <= 0;
                              continous_flag <= 0;
  
@@ -3460,7 +4901,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lke_ram_part.v paramet
  endgenerate
  
  endmodule
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lookup_engine_top.v parametric_menshen/lookup/lookup_engine_top.v
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/lookup/lookup_engine_top.v parametric_menshen/lookup/lookup_engine_top.v
 --- menshen/lookup/lookup_engine_top.v
 +++ parametric_menshen/lookup/lookup_engine_top.v
 @@ -8,7 +8,8 @@
@@ -3483,7 +4924,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/lookup/lookup_engine_top.v pa
  )
  lke_cam (
  	.clk		(clk),
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/output_arbiter.v parametric_menshen/output_arbiter.v
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/output_arbiter.v parametric_menshen/output_arbiter.v
 --- menshen/output_arbiter.v
 +++ parametric_menshen/output_arbiter.v
 @@ -1,176 +0,0 @@
@@ -3663,7 +5104,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/output_arbiter.v parametric_m
 -end
 -
 -endmodule
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing_top.v parametric_menshen/parser_do_parsing_top.v
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/parser_do_parsing_top.v parametric_menshen/parser_do_parsing_top.v
 --- menshen/parser_do_parsing_top.v
 +++ parametric_menshen/parser_do_parsing_top.v
 @@ -30,160 +30,107 @@
@@ -4007,10 +5448,32 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing_top.v param
 -end*/
 -
  endmodule
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing.v parametric_menshen/parser_do_parsing.v
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/parser_do_parsing.v parametric_menshen/parser_do_parsing.v
 --- menshen/parser_do_parsing.v
 +++ parametric_menshen/parser_do_parsing.v
-@@ -73,6 +73,35 @@
+@@ -11,12 +11,6 @@
+ `define PROT_TCP		8'h06
+ `define PROT_UDP		8'h11
+ 
+-`define SUB_PARSE(idx) \
+-	case(sub_parse_val_out_type_d1[idx]) \
+-		2'b01: val_2B_nxt[sub_parse_val_out_seq_d1[idx]] = sub_parse_val_out_d1[idx][15:0]; \
+-		2'b10: val_4B_nxt[sub_parse_val_out_seq_d1[idx]] = sub_parse_val_out_d1[idx][31:0]; \
+-		2'b11: val_6B_nxt[sub_parse_val_out_seq_d1[idx]] = sub_parse_val_out_d1[idx][47:0]; \
+-	endcase \
+ 
+ `define SWAP_BYTE_ORDER(idx) \
+ 	assign val_6B_swapped[idx] = {	val_6B[idx][0+:8], \
+@@ -62,7 +56,7 @@
+ 	output reg										vlan_out_valid
+ );
+ 
+-integer i;
++integer i, j;
+ 
+ localparam			IDLE=0,
+ 					WAIT_1CYCLE_RAM=1,
+@@ -73,6 +67,32 @@
  					EMPTY_1=6;
  					
  
@@ -4018,7 +5481,6 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing.v parametri
 +reg [C_AXIS_TUSER_WIDTH-1:0]				tuser_1st_r;
 +reg [C_PARSER_RAM_WIDTH-1:0]				bram_in_r;
 +reg											bram_in_valid_r;
-+reg											stg_ready_in_r;
 +reg [9:0]                                   sub_parse_act_valid;
 +
 +always @(posedge axis_clk) begin
@@ -4027,7 +5489,6 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing.v parametri
 +		tuser_1st_r <= 0;
 +		bram_in_r <= 0;
 +		bram_in_valid_r <= 0;
-+		stg_ready_in_r <= 0;
 +		
 +		sub_parse_act_valid <= 0;
 +	end
@@ -4036,7 +5497,6 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing.v parametri
 +		tuser_1st_r <=     tuser_1st;
 +		bram_in_r <=       bram_in;
 +		bram_in_valid_r <= bram_in_valid;
-+		stg_ready_in_r <=  stg_ready_in;
 +		
 +		sub_parse_act_valid <= {10{segs_valid}};
 +	end
@@ -4046,7 +5506,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing.v parametri
  //
  reg [PKT_HDR_LEN-1:0]	pkt_hdr_vec_next;
  reg parser_valid_next;
-@@ -83,19 +112,18 @@
+@@ -83,19 +103,18 @@
  // parsing actions
  wire [15:0] parse_action [0:9];		// we have 10 parse action
  
@@ -4076,13 +5536,83 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing.v parametri
  wire [47:0] sub_parse_val_out [0:9];
  wire [9:0] sub_parse_val_out_valid;
  wire [1:0] sub_parse_val_out_type [0:9];
-@@ -157,24 +185,11 @@
- 	val_6B_nxt[6]=val_6B[6];
- 	val_6B_nxt[7]=val_6B[7];
+@@ -109,9 +128,6 @@
+ reg [47:0] val_6B [0:7];
+ reg [31:0] val_4B [0:7];
+ reg [15:0] val_2B [0:7];
+-reg [47:0] val_6B_nxt [0:7];
+-reg [31:0] val_4B_nxt [0:7];
+-reg [15:0] val_2B_nxt [0:7];
+ 
+ wire [47:0] val_6B_swapped [0:7];
+ wire [31:0] val_4B_swapped [0:7];
+@@ -126,77 +142,55 @@
+ `SWAP_BYTE_ORDER(6)
+ `SWAP_BYTE_ORDER(7)
+ 
++always @(posedge axis_clk) begin
++    if (~aresetn || state!=IDLE) begin
++		for (j=0; j<8; j=j+1) begin
++			val_2B[j] <= 0;
++			val_4B[j] <= 0;
++			val_6B[j] <= 0;
++		end
++    end
++    else begin
++        for (j=0; j<10; j=j+1) begin
++            case(sub_parse_val_out_type_d1[j])
++                2'b01: val_2B[sub_parse_val_out_seq_d1[j]] <= sub_parse_val_out_d1[j][15:0];
++                2'b10: val_4B[sub_parse_val_out_seq_d1[j]] <= sub_parse_val_out_d1[j][31:0];
++                2'b11: val_6B[sub_parse_val_out_seq_d1[j]] <= sub_parse_val_out_d1[j][47:0];
++            endcase
++        end
++    end
++end
++
++always @(posedge axis_clk) begin
++	if (~aresetn) begin
++		vlan_out_next <= 0;
++	end
++	else begin
++		if (segs_valid)
++			vlan_out_next <= tdata_segs[116+:12];
++	end
++end
++
+ always @(*) begin
+ 	state_next = state;
  	//
+ 	parser_valid_next = 0;
+ 	pkt_hdr_vec_next = pkt_hdr_vec;
+ 	//
+-	val_2B_nxt[0]=val_2B[0];
+-	val_2B_nxt[1]=val_2B[1];
+-	val_2B_nxt[2]=val_2B[2];
+-	val_2B_nxt[3]=val_2B[3];
+-	val_2B_nxt[4]=val_2B[4];
+-	val_2B_nxt[5]=val_2B[5];
+-	val_2B_nxt[6]=val_2B[6];
+-	val_2B_nxt[7]=val_2B[7];
+-	val_4B_nxt[0]=val_4B[0];
+-	val_4B_nxt[1]=val_4B[1];
+-	val_4B_nxt[2]=val_4B[2];
+-	val_4B_nxt[3]=val_4B[3];
+-	val_4B_nxt[4]=val_4B[4];
+-	val_4B_nxt[5]=val_4B[5];
+-	val_4B_nxt[6]=val_4B[6];
+-	val_4B_nxt[7]=val_4B[7];
+-	val_6B_nxt[0]=val_6B[0];
+-	val_6B_nxt[1]=val_6B[1];
+-	val_6B_nxt[2]=val_6B[2];
+-	val_6B_nxt[3]=val_6B[3];
+-	val_6B_nxt[4]=val_6B[4];
+-	val_6B_nxt[5]=val_6B[5];
+-	val_6B_nxt[6]=val_6B[6];
+-	val_6B_nxt[7]=val_6B[7];
+-	//
 -	sub_parse_act_valid = 10'b0;
 -	//
- 	vlan_out_next = vlan_out;
+-	vlan_out_next = vlan_out;
  	vlan_out_valid_next = 0;
  
  	case (state)
@@ -4091,26 +5621,28 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing.v parametri
 -				sub_parse_act_valid = 10'b1111111111;
 -				vlan_out_next = tdata_segs[116+:12];
 -				state_next = FINISH_SUB_PARSE;
--			end
--		end
++			if(&sub_parse_val_out_valid_d1) begin
++				vlan_out_valid_next = 1;
++			    state_next = GET_PHV_OUTPUT;
+ 			end
+ 		end
 -		FINISH_SUB_PARSE: begin
 -			state_next = EMPTY_1;
 -		end
 -		EMPTY_1: begin
 -			state_next = GET_PHV_OUTPUT;
- 			`SUB_PARSE(0)
- 			`SUB_PARSE(1)
- 			`SUB_PARSE(2)
-@@ -185,19 +200,18 @@
- 			`SUB_PARSE(7)
- 			`SUB_PARSE(8)
- 			`SUB_PARSE(9)
-+			vlan_out_next = tdata_segs_r[116+:12];
- 			vlan_out_valid_next = 1;
-+			
-+			if(&sub_parse_val_out_valid_d1)
-+			    state_next = GET_PHV_OUTPUT;
- 		end
+-			`SUB_PARSE(0)
+-			`SUB_PARSE(1)
+-			`SUB_PARSE(2)
+-			`SUB_PARSE(3)
+-			`SUB_PARSE(4)
+-			`SUB_PARSE(5)
+-			`SUB_PARSE(6)
+-			`SUB_PARSE(7)
+-			`SUB_PARSE(8)
+-			`SUB_PARSE(9)
+-			vlan_out_valid_next = 1;
+-		end
  		GET_PHV_OUTPUT: begin
  			pkt_hdr_vec_next ={val_6B_swapped[7], val_6B_swapped[6], val_6B_swapped[5], val_6B_swapped[4], val_6B_swapped[3], val_6B_swapped[2], val_6B_swapped[1], val_6B_swapped[0],
  							val_4B_swapped[7], val_4B_swapped[6], val_4B_swapped[5], val_4B_swapped[4], val_4B_swapped[3], val_4B_swapped[2], val_4B_swapped[1], val_4B_swapped[0],
@@ -4121,22 +5653,108 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing.v parametri
 -							// {115{1'b0}}, vlan_id, 1'b0, tuser_1st};
 -							// {128{1'b0}}, tuser_1st[127:32], 8'h04, tuser_1st[23:0]};
 -							//
--			if (stg_ready_in) begin
 +							{115{1'b0}}, vlan_out, 1'b0, (C_AXIS_TUSER_WIDTH == 128 ? tuser_1st_r : ({{128-C_AXIS_TUSER_WIDTH{1'b0}}, tuser_1st_r})) };
-+			if (stg_ready_in_r) begin
+ 			if (stg_ready_in) begin
  				parser_valid_next = 1;
  				state_next = IDLE;
- 			end
-@@ -206,7 +220,7 @@
+@@ -209,32 +203,6 @@
+ 			if (stg_ready_in) begin
+ 				parser_valid_next = 1;
+ 				state_next = IDLE;
+-				
+-				// zero out
+-				val_2B_nxt[0]=0;
+-				val_2B_nxt[1]=0;
+-				val_2B_nxt[2]=0;
+-				val_2B_nxt[3]=0;
+-				val_2B_nxt[4]=0;
+-				val_2B_nxt[5]=0;
+-				val_2B_nxt[6]=0;
+-				val_2B_nxt[7]=0;
+-				val_4B_nxt[0]=0;
+-				val_4B_nxt[1]=0;
+-				val_4B_nxt[2]=0;
+-				val_4B_nxt[3]=0;
+-				val_4B_nxt[4]=0;
+-				val_4B_nxt[5]=0;
+-				val_4B_nxt[6]=0;
+-				val_4B_nxt[7]=0;
+-				val_6B_nxt[0]=0;
+-				val_6B_nxt[1]=0;
+-				val_6B_nxt[2]=0;
+-				val_6B_nxt[3]=0;
+-				val_6B_nxt[4]=0;
+-				val_6B_nxt[5]=0;
+-				val_6B_nxt[6]=0;
+-				val_6B_nxt[7]=0;
  			end
  		end
- 		OUTPUT: begin
--			if (stg_ready_in) begin
-+			if (stg_ready_in_r) begin
- 				parser_valid_next = 1;
- 				state_next = IDLE;
- 				
-@@ -345,7 +359,7 @@
+ 	endcase
+@@ -251,31 +219,6 @@
+ 		//
+ 		vlan_out <= 0;
+ 		vlan_out_valid <= 0;
+-		//
+-		val_2B[0] <= 0;
+-		val_2B[1] <= 0;
+-		val_2B[2] <= 0;
+-		val_2B[3] <= 0;
+-		val_2B[4] <= 0;
+-		val_2B[5] <= 0;
+-		val_2B[6] <= 0;
+-		val_2B[7] <= 0;
+-		val_4B[0] <= 0;
+-		val_4B[1] <= 0;
+-		val_4B[2] <= 0;
+-		val_4B[3] <= 0;
+-		val_4B[4] <= 0;
+-		val_4B[5] <= 0;
+-		val_4B[6] <= 0;
+-		val_4B[7] <= 0;
+-		val_6B[0] <= 0;
+-		val_6B[1] <= 0;
+-		val_6B[2] <= 0;
+-		val_6B[3] <= 0;
+-		val_6B[4] <= 0;
+-		val_6B[5] <= 0;
+-		val_6B[6] <= 0;
+-		val_6B[7] <= 0;
+ 
+ 		for (i=0; i<10; i=i+1) begin
+ 			sub_parse_val_out_d1[i] <= 0;
+@@ -293,31 +236,6 @@
+ 		vlan_out <= vlan_out_next;
+ 		vlan_out_valid <= vlan_out_valid_next;
+ 		//
+-		val_2B[0] <= val_2B_nxt[0];
+-		val_2B[1] <= val_2B_nxt[1];
+-		val_2B[2] <= val_2B_nxt[2];
+-		val_2B[3] <= val_2B_nxt[3];
+-		val_2B[4] <= val_2B_nxt[4];
+-		val_2B[5] <= val_2B_nxt[5];
+-		val_2B[6] <= val_2B_nxt[6];
+-		val_2B[7] <= val_2B_nxt[7];
+-		val_4B[0] <= val_4B_nxt[0];
+-		val_4B[1] <= val_4B_nxt[1];
+-		val_4B[2] <= val_4B_nxt[2];
+-		val_4B[3] <= val_4B_nxt[3];
+-		val_4B[4] <= val_4B_nxt[4];
+-		val_4B[5] <= val_4B_nxt[5];
+-		val_4B[6] <= val_4B_nxt[6];
+-		val_4B[7] <= val_4B_nxt[7];
+-		val_6B[0] <= val_6B_nxt[0];
+-		val_6B[1] <= val_6B_nxt[1];
+-		val_6B[2] <= val_6B_nxt[2];
+-		val_6B[3] <= val_6B_nxt[3];
+-		val_6B[4] <= val_6B_nxt[4];
+-		val_6B[5] <= val_6B_nxt[5];
+-		val_6B[6] <= val_6B_nxt[6];
+-		val_6B[7] <= val_6B_nxt[7];
+-		//
+ 		for (i=0; i<10; i=i+1) begin
+ 			sub_parse_val_out_d1[i] <= sub_parse_val_out[i];
+ 			sub_parse_val_out_valid_d1 <= sub_parse_val_out_valid;
+@@ -345,7 +263,7 @@
  			.parse_act_valid	(sub_parse_act_valid[index]),
  			.parse_act			(parse_action[index]),
  
@@ -4145,7 +5763,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_do_parsing.v parametri
  			.val_out_valid		(sub_parse_val_out_valid[index]),
  			.val_out			(sub_parse_val_out[index]),
  			.val_out_type		(sub_parse_val_out_type[index]),
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_top.v parametric_menshen/parser_top.v
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/parser_top.v parametric_menshen/parser_top.v
 --- menshen/parser_top.v
 +++ parametric_menshen/parser_top.v
 @@ -37,7 +37,6 @@
@@ -4184,7 +5802,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_top.v parametric_mensh
  	// ctrl path
  	input [C_S_AXIS_DATA_WIDTH-1:0]			ctrl_s_axis_tdata,
  	input [C_S_AXIS_TUSER_WIDTH-1:0]		ctrl_s_axis_tuser,
-@@ -96,98 +74,14 @@
+@@ -96,106 +74,25 @@
  reg bram_ready, bram_ready_next;
  
  
@@ -4201,7 +5819,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_top.v parametric_mensh
 -assign m_axis_tready_queue[1] = m_axis_tready_1;
 -assign m_axis_tready_queue[2] = m_axis_tready_2;
 -assign m_axis_tready_queue[3] = m_axis_tready_3;
--
++assign s_axis_tready = bram_ready && m_axis_tready_0;
+ 
 -
 -localparam	IDLE=0,
 -			FLUSH_REST_PKTS=1;
@@ -4210,8 +5829,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_top.v parametric_mensh
 -wire [1:0] cur_queue_plus1;
 -
 -assign cur_queue_plus1 = (cur_queue==3)?0:cur_queue+1;
-+assign s_axis_tready = bram_ready && m_axis_tready_0;
- 
+-
 -// ==================================================
  assign m_axis_tdata_0 = s_axis_tdata;
  assign m_axis_tuser_0 = s_axis_tuser;
@@ -4242,8 +5860,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_top.v parametric_mensh
 -always @(*) begin
 -	state_next = state;
 -	cur_queue_next = cur_queue;
-+assign m_axis_tvalid_0 = s_axis_tvalid;
- 
+-
 -	case (state)
 -		IDLE: begin
 -			if (s_axis_tvalid) begin
@@ -4271,7 +5888,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_top.v parametric_mensh
 -		end
 -	endcase
 -end
--
++assign m_axis_tvalid_0 = s_axis_tvalid;
+ 
 -always @(posedge axis_clk) begin
 -	if (~aresetn) begin
 -		state <= IDLE;
@@ -4285,7 +5903,20 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_top.v parametric_mensh
  
  // ==================================================
  
-@@ -204,54 +98,19 @@
+-wire [C_VLANID_WIDTH-1:0]				parser_out_vlan, vlan_fifo_out;
++wire [C_VLANID_WIDTH-1:0]				parser_out_vlan;
+ wire									parser_out_vlan_valid;
++reg  [C_VLANID_WIDTH-1:0]				parser_out_vlan_r;
++reg										parser_out_vlan_valid_r;
++
+ // wire	vlan_fifo_empty, vlan_fifo_nearly_full;
+ reg [C_VLANID_WIDTH-1:0] out_vlan_next;
+-reg out_vlan_valid_next;
++reg                      out_vlan_valid_next;
+ // reg		vlan_fifo_rd_en;
+ 
+ // wire [PKT_HDR_LEN-1:0]		phv_fifo_out;
+@@ -204,54 +101,21 @@
  
  
  
@@ -4294,7 +5925,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_top.v parametric_mensh
 -reg [1:0] p_state, p_state_next;
 -reg [1:0] p_cur_queue, p_cur_queue_next;
 -wire [1:0] p_cur_queue_plus1;
--
+ 
 -assign p_cur_queue_plus1 = (p_cur_queue==3)?0:p_cur_queue+1;
 -
 -wire [3:0] p_cur_queue_val;
@@ -4302,19 +5933,25 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_top.v parametric_mensh
 -assign p_cur_queue_val[1] = (p_cur_queue==1)?1:0;
 -assign p_cur_queue_val[2] = (p_cur_queue==2)?1:0;
 -assign p_cur_queue_val[3] = (p_cur_queue==3)?1:0;
- 
- wire parser_valid_w;
+-
+-wire parser_valid_w;
++wire                   parser_valid_w;
  wire [PKT_HDR_LEN-1:0] pkt_hdr_vec_w;
- reg [PKT_HDR_LEN-1:0] pkt_hdr_vec_next, pkt_hdr_vec_r;
- reg parser_valid_next, parser_valid_r;
+-reg [PKT_HDR_LEN-1:0] pkt_hdr_vec_next, pkt_hdr_vec_r;
+-reg parser_valid_next, parser_valid_r;
++reg                    parser_valid_w_r;
++reg  [PKT_HDR_LEN-1:0] pkt_hdr_vec_w_r;
++reg  [PKT_HDR_LEN-1:0] pkt_hdr_vec_next, pkt_hdr_vec_r;
++reg                    parser_valid_next, parser_valid_r;
  
 -/*
--always @(*) begin
+ always @(*) begin
 -	p_state_next = p_state;
 -	p_cur_queue_next = p_cur_queue;
 -	
 -	pkt_hdr_vec_next = pkt_hdr_vec;
--	parser_valid_next = 0;
++	pkt_hdr_vec_next = pkt_hdr_vec_w_r;
+ 	parser_valid_next = 0;
 -	case (p_state)
 -		P_IDLE: begin
 -			if (parser_valid_w) begin
@@ -4326,22 +5963,33 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_top.v parametric_mensh
 -		end
 -	endcase
 -end*/
--
- always @(*) begin
--	p_cur_queue_next = p_cur_queue;
- 	pkt_hdr_vec_next = pkt_hdr_vec_r;
- 	parser_valid_next = 0;
  
- 	if (parser_valid_w) begin
+-always @(*) begin
+-	p_cur_queue_next = p_cur_queue;
+-	pkt_hdr_vec_next = pkt_hdr_vec_r;
+-	parser_valid_next = 0;
+-
+-	if (parser_valid_w) begin
 -		pkt_hdr_vec_next = {pkt_hdr_vec_w[PKT_HDR_LEN-1:145], p_cur_queue_val, pkt_hdr_vec_w[0+:141]};
-+		pkt_hdr_vec_next = {pkt_hdr_vec_w[PKT_HDR_LEN-1:145], 4'b0001, pkt_hdr_vec_w[0+:141]};
++	if (parser_valid_w_r) begin
++		pkt_hdr_vec_next = {pkt_hdr_vec_w_r[PKT_HDR_LEN-1:145], 4'b0001, pkt_hdr_vec_w_r[0+:141]};
  		parser_valid_next = 1;
 -
 -		p_cur_queue_next = p_cur_queue_plus1;
  	end
  end
  
-@@ -267,8 +126,6 @@
+@@ -259,16 +123,14 @@
+ 	out_vlan_valid_next = 0;
+ 	out_vlan_next = out_vlan;
+ 
+-	if (parser_out_vlan_valid) begin
++	if (parser_out_vlan_valid_r) begin
+ 		out_vlan_valid_next = 1;
+-		out_vlan_next = parser_out_vlan;
++		out_vlan_next = parser_out_vlan_r;
+ 	end
+ end
  
  always @(posedge axis_clk) begin
  	if (~aresetn) begin
@@ -4350,8 +5998,15 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_top.v parametric_mensh
  		pkt_hdr_vec <= 0;
  		parser_valid <= 0;
  
-@@ -279,8 +136,6 @@
+@@ -277,10 +139,13 @@
+ 
+ 		pkt_hdr_vec_r <= 0;
  		parser_valid_r <= 0;
++		
++		parser_out_vlan_r <= 0;
++		parser_out_vlan_valid_r <= 0;
++		parser_valid_r <= 0;
++		pkt_hdr_vec_w_r <= 0;
  	end
  	else begin
 -		p_state <= p_state_next;
@@ -4359,7 +6014,19 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_top.v parametric_mensh
  		pkt_hdr_vec_r <= pkt_hdr_vec_next;
  		parser_valid_r <= parser_valid_next;
  		pkt_hdr_vec <= pkt_hdr_vec_r;
-@@ -307,6 +162,7 @@
+@@ -288,6 +153,11 @@
+ 
+ 		out_vlan <= out_vlan_next;
+ 		out_vlan_valid <= out_vlan_valid_next;
++		
++		parser_out_vlan_r <= parser_out_vlan;
++		parser_out_vlan_valid_r <= parser_out_vlan_valid;
++		parser_valid_w_r <= parser_valid_w;
++		pkt_hdr_vec_w_r <= pkt_hdr_vec_w;
+ 	end
+ end
+ 
+@@ -307,6 +177,7 @@
  
  //
  parser_wait_segs #(
@@ -4367,7 +6034,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_top.v parametric_mensh
  )
  get_segs
  (
-@@ -326,6 +182,7 @@
+@@ -326,6 +197,7 @@
  );
  
  parser_do_parsing_top #(
@@ -4375,7 +6042,99 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/parser_top.v parametric_mensh
  )
  do_parsing
  (
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/pkt_filter.v parametric_menshen/pkt_filter.v
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/parser_wait_segs.v parametric_menshen/parser_wait_segs.v
+--- menshen/parser_wait_segs.v
++++ parametric_menshen/parser_wait_segs.v
+@@ -30,24 +30,48 @@
+ 			WAIT_TILL_LAST=4;
+ 
+ reg [2:0]	state, state_next;
+-reg [C_NUM_SEGS*C_AXIS_DATA_WIDTH-1:0] tdata_segs_next;
+-reg [C_AXIS_TUSER_WIDTH-1:0] tuser_1st_next;
+ reg	segs_valid_next;
+ 
++reg en_shift, en_shift_next;
++
++always @(posedge axis_clk) begin
++	if (~aresetn) begin
++		state <= WAIT_1ST_SEG;
++		
++		tdata_segs <= 0;
++		tuser_1st <= 0;
++		segs_valid <= 0;
++
++		en_shift <= 0;
++	end
++	else begin
++		state <= state_next;
++
++		if(en_shift)
++			tdata_segs <= {s_axis_tdata, tdata_segs[C_AXIS_DATA_WIDTH+:C_AXIS_DATA_WIDTH]};
++		tuser_1st <= s_axis_tuser;
++		segs_valid <= segs_valid_next;
++
++		en_shift <= en_shift_next;
++	end
++end
++
+ always @(*) begin
+ 
+ 	state_next = state;
+ 
+-	tdata_segs_next = tdata_segs;
+-	tuser_1st_next = tuser_1st;
++	// tdata_segs_next = tdata_segs;
++	// tuser_1st_next = tuser_1st;
+ 	segs_valid_next = 0;
+ 
++	en_shift_next = 1;
++	
+ 	case (state)
+ 		// at-most 2 segs
+ 		WAIT_1ST_SEG: begin
+ 			if (s_axis_tvalid) begin
+-				tdata_segs_next[0*C_AXIS_DATA_WIDTH+:C_AXIS_DATA_WIDTH] = s_axis_tdata;
+-				tuser_1st_next = s_axis_tuser;
++				// tdata_segs_next[0*C_AXIS_DATA_WIDTH+:C_AXIS_DATA_WIDTH] = s_axis_tdata;
++				// tuser_1st_next = s_axis_tuser;
+ 
+ 				if (s_axis_tlast) begin
+ 					state_next = WAIT_1CYCLE;
+@@ -63,7 +87,7 @@
+ 		end
+ 		WAIT_2ND_SEG: begin
+ 			if (s_axis_tvalid) begin
+-				tdata_segs_next[1*C_AXIS_DATA_WIDTH+:C_AXIS_DATA_WIDTH] = s_axis_tdata;
++				// tdata_segs_next[1*C_AXIS_DATA_WIDTH+:C_AXIS_DATA_WIDTH] = s_axis_tdata;
+ 
+ 				segs_valid_next = 1;
+ 				if (s_axis_tlast) begin
+@@ -82,24 +106,4 @@
+ 	endcase
+ end
+ 
+-
+-always @(posedge axis_clk) begin
+-	if (~aresetn) begin
+-
+-		state <= WAIT_1ST_SEG;
+-
+-		tdata_segs <= {C_NUM_SEGS*C_AXIS_DATA_WIDTH{1'b0}};
+-		tuser_1st <= {C_AXIS_TUSER_WIDTH{1'b0}};
+-		segs_valid <= 0;
+-	end
+-	else begin
+-		state <= state_next;
+-
+-		tdata_segs <= tdata_segs_next;
+-		tuser_1st <= tuser_1st_next;
+-
+-		segs_valid <= segs_valid_next;
+-	end
+-end
+-
+ endmodule
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/pkt_filter.v parametric_menshen/pkt_filter.v
 --- menshen/pkt_filter.v
 +++ parametric_menshen/pkt_filter.v
 @@ -10,8 +10,8 @@
@@ -4446,10 +6205,10 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/pkt_filter.v parametric_mensh
  
  //
  assign s_axis_tready = !pkt_fifo_full;
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_menshen/rmt_wrapper.sv
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv parametric_menshen/rmt_wrapper.sv
 --- menshen/rmt_wrapper.sv
 +++ parametric_menshen/rmt_wrapper.sv
-@@ -0,0 +1,685 @@
+@@ -0,0 +1,682 @@
 +`timescale 1ns / 1ps
 +
 +module rmt_wrapper #(
@@ -4646,9 +6405,10 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_men
 +logic pkt_fifo_empty;
 +
 +assign s_axis_tready_f = !pkt_fifo_nearly_full;
-+// equivalent to the old:
-+// assign s_axis_tready_f = !pkt_fifo_nearly_full[0] && !pkt_fifo_nearly_full[1] &&
-+//                          !pkt_fifo_nearly_full[2] && !pkt_fifo_nearly_full[3];
++
++logic switch_in_pkt_fifo;      // logic used for the 2 deparsers, since the FSM inside can accept packets only at
++logic switch_in_phv_fifo;      // half the frequency of the clock
++logic switch_out;
 +
 +// create a fifo interposed between the parser and the data cache
 +fallthrough_small_fifo #(
@@ -4937,11 +6697,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_men
 +);
 +
 +
-+logic switch_in_pkt_fifo;      // logic used for the 2 deparsers, since the FSM inside can accept packets only at
-+logic switch_in_phv_fifo;      // half the frequency of the clock
-+logic switch_out;
-+
-+// per ingressi e tready mi basta fare questo, dove switcho fra un deparser e l'altro (devo averne istanziati 2)
++// logic used for the 2 deparsers, since the FSM inside can accept packets only at half the frequency of the clock
 +always @(posedge clk) begin
 +    if (~aresetn) begin
 +        switch_in_pkt_fifo <= 0;
@@ -5135,7 +6891,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/rmt_wrapper.sv parametric_men
 +end
 +
 +endmodule
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/stage.v parametric_menshen/stage.v
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/stage.v parametric_menshen/stage.v
 --- menshen/stage.v
 +++ parametric_menshen/stage.v
 @@ -3,12 +3,13 @@
@@ -5200,853 +6956,174 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/stage.v parametric_menshen/st
  )action_engine(
      .clk(axis_clk),
      .rst_n(aresetn),
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/tb/tb_rmt_wrapper.v parametric_menshen/tb/tb_rmt_wrapper.v
---- menshen/tb/tb_rmt_wrapper.v
-+++ parametric_menshen/tb/tb_rmt_wrapper.v
-@@ -61,396 +61,628 @@
-     s_axis_tvalid <= 1'b0;
-     s_axis_tlast <= 1'b0;
-     #(3*CYCLE)
--    s_axis_tdata <= 512'h00000000000000000000000000000001001355541c00f2f1d204dededede6f6f6f6f20de1140000001003000004500080f0000810504030201000b0a09080706;
-+    // conf1.txt:
-+    s_axis_tdata <= 512'h000000000000000000000000000000010000902f2e00f2f1d204dededede6f6f6f6f0ede1140000001004200004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000010042;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000270e250d230c910ba108;
-+    s_axis_tkeep <= 64'h00000000000fffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-     #CYCLE
--    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004; 
--    s_axis_tkeep <= 64'h0000000000000003;
--    s_axis_tuser <= 128'h0;
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000010005902a2e00f2f1d204dededede6f6f6f6f0ede1140000001004200004500080f0000810504030201000b0a09080706;
-+    s_axis_tkeep <= 64'hffffffffffffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b0;
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000270e250d230c910ba108;
-+    s_axis_tkeep <= 64'h00000000000fffff;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b1;
--	#CYCLE
--	s_axis_tvalid <= 1'b0;
--	s_axis_tlast <= 1'b0;
--    #(3*CYCLE)
--    s_axis_tdata <= 512'h00000000000000000000000000000002001351531c00f2f1d204dededede6f6f6f6f20de1140000001003000004500080f0000810504030201000b0a09080706; 
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h0000000000000000000000000000000100014f5e1f00f2f1d204dededede6f6f6f6f1dde1140000001003300004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000010042;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c0000;
-+    s_axis_tkeep <= 64'h000000000000001f;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-     #CYCLE
--    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000404; 
--    s_axis_tkeep <= 64'h0000000000000003;
--    s_axis_tuser <= 128'h0;
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000010f0117ea3300f2f1d204dededede6f6f6f6f09de1140000001004700004500080f0000810504030201000b0a09080706;
-+    s_axis_tkeep <= 64'hffffffffffffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b0;
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000080ffff0000ffffffffffffffffffffffffffffffffffffffff;
-+    s_axis_tkeep <= 64'h0000000001ffffff;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b1;
--	#CYCLE
--	s_axis_tvalid <= 1'b0;
--	s_axis_tlast <= 1'b0;
--    #(3*CYCLE)
--    s_axis_tdata <= 512'h0000000000000000000000000000000300134d521c00f2f1d204dededede6f6f6f6f20de1140000001003000004500080f0000810504030201000b0a09080706; 
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000000002056a3400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000010042;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
-     #(CYCLE)
--    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000804; 
--    s_axis_tkeep <= 64'h0000000000000003;
--    s_axis_tuser <= 128'h0;
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000001000;
-+    s_axis_tkeep <= 64'h0000000003ffffff;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b1;
--	#CYCLE
--	s_axis_tvalid <= 1'b0;
--	s_axis_tlast <= 1'b0;
--    #(3*CYCLE)
--    s_axis_tdata <= 512'h00000000000000000000000000000004001349511c00f2f1d204dededede6f6f6f6f20de1140000001003000004500080f0000810504030201000b0a09080706; 
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000000f0259a96900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000010042;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
-     #(CYCLE)
--    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c04; 
--    s_axis_tkeep <= 64'h0000000000000003;
--    s_axis_tuser <= 128'h0;
-+    s_axis_tdata <= 512'h000f00001e00003c0000780000f00000e00100c00300802703000e00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f0;
-+    s_axis_tkeep <= 64'hffffffffffffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b0;
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000e00100c00300800700;
-+    s_axis_tkeep <= 64'h0000000000007fff;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b1;
--	#CYCLE
--	s_axis_tvalid <= 1'b0;
--	s_axis_tlast <= 1'b0;
--    #(10*CYCLE)
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/sub_deparser.v parametric_menshen/sub_deparser.v
+--- menshen/sub_deparser.v
++++ parametric_menshen/sub_deparser.v
+@@ -33,58 +33,56 @@
+ 	val_out_nxt = val_out;
+ 	val_out_type_nxt = val_out_type;
+ 
+-	if (parse_act_valid) begin
+-		val_out_valid_nxt = 1;
 -
--    #(30*CYCLE)
--    s_axis_tdata <= 512'h000000000000000000000000000000010000902f2e00f2f1d204dededede6f6f6f6f0ede1140000001004200004500080f0000810504030201000b0a09080706; 
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000001000215693400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000010054;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
-     #(CYCLE)
--    s_axis_tdata <= 512'h000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000270e250d230c910ba108; 
--    s_axis_tkeep <= 64'h00000000000fffff;
--    s_axis_tuser <= 128'h0;
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000;
-+    s_axis_tkeep <= 64'h0000000003ffffff;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b1;
--	#CYCLE
--	s_axis_tvalid <= 1'b0;
--	s_axis_tlast <= 1'b0;
--    #(30*CYCLE)
--    s_axis_tdata <= 512'h000000000000000000000000000000010005902a2e00f2f1d204dededede6f6f6f6f0ede1140000001004200004500080f0000810504030201000b0a09080706; 
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000010f027bc06900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000010054;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
-     #(CYCLE)
--    s_axis_tdata <= 512'h000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000270e250d230c910ba108; 
--    s_axis_tkeep <= 64'h00000000000fffff;
--    s_axis_tuser <= 128'h0;
-+    s_axis_tdata <= 512'h000f00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f0;
-+    s_axis_tkeep <= 64'hffffffffffffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b0;
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008d00000e00100c00300800700;
-+    s_axis_tkeep <= 64'h0000000000007fff;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b1;
--	#CYCLE
--	s_axis_tvalid <= 1'b0;
--	s_axis_tlast <= 1'b0;
--    #(30*CYCLE)
--    s_axis_tdata <= 512'h0000000000000000000000000000000100014f5e1f00f2f1d204dededede6f6f6f6f1dde1140000001003300004500080f0000810504030201000b0a09080706; 
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h0000000000000000000000000000000100094f561f00f2f1d204dededede6f6f6f6f1dde1140000001003300004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000010045;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
-     #(CYCLE)
--    s_axis_tdata <= 512'h000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c0000; 
-+    s_axis_tdata <= 512'h000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c0000;
-     s_axis_tkeep <= 64'h000000000000001f;
--    s_axis_tuser <= 128'h0;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b1;
--	#CYCLE
--	s_axis_tvalid <= 1'b0;
--	s_axis_tlast <= 1'b0;
--    #(30*CYCLE)
--    s_axis_tdata <= 512'h000000000000000000000000000000010f0117ea3300f2f1d204dededede6f6f6f6f09de1140000001004700004500080f0000810504030201000b0a09080706; 
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000010f0917e23300f2f1d204dededede6f6f6f6f09de1140000001004700004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000010059;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
-     #(CYCLE)
--    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000080ffff0000ffffffffffffffffffffffffffffffffffffffff; 
-+    s_axis_tdata <= 512'h0000000000000000000000000000000000000000000000000000000000000000000000000000008000000000ffffffffffffffffffffffffffffffffffffffff;
-     s_axis_tkeep <= 64'h0000000001ffffff;
--    s_axis_tuser <= 128'h0;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b1;
--	#CYCLE
--	s_axis_tvalid <= 1'b0;
--	s_axis_tlast <= 1'b0;
--    #(30*CYCLE)
--    s_axis_tdata <= 512'h00000000000000000000000000000000000275683400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706; 
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000af5613400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h0000000000000000000000000001005a;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
-     #(CYCLE)
--    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000a00100000000000000000000000000000000000000001000; 
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000001000;
-     s_axis_tkeep <= 64'h0000000003ffffff;
--    s_axis_tuser <= 128'h0;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b1;
--	#CYCLE
--	s_axis_tvalid <= 1'b0;
--	s_axis_tlast <= 1'b0;
--    #(30*CYCLE)
--    s_axis_tdata <= 512'h000000000000000000000000000000000f02e83c6900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706; 
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000000f0a59996900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h0000000000000000000000000001008f;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
-     #(CYCLE)
--    s_axis_tdata <= 512'h000f00001e00003c0000780000f00000e00100c003008007808c0200001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f0; 
-+    s_axis_tdata <= 512'h000f00001e00003c0000780000f00000e00100c00300802f03000e00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f0;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h0;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
-     #(CYCLE)
--    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000e00100c00300800700; 
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000e00100c00300800700;
-     s_axis_tkeep <= 64'h0000000000007fff;
--    s_axis_tuser <= 128'h0;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b1;
--	#CYCLE
--	s_axis_tvalid <= 1'b0;
--	s_axis_tlast <= 1'b0;
--    #(30*CYCLE)
--    s_axis_tdata <= 512'h00000000000000000000000000000001000245683400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706; 
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000001000a15613400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h0000000000000000000000000001005a;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
-     #(CYCLE)
--    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000d00000000000000000000000000000000000000000001000; 
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000;
-     s_axis_tkeep <= 64'h0000000003ffffff;
--    s_axis_tuser <= 128'h0;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b1;
--	#CYCLE
--	s_axis_tvalid <= 1'b0;
--	s_axis_tlast <= 1'b0;
--    #(30*CYCLE)
--    s_axis_tdata <= 512'h000000000000000000000000000000010f02e93b6900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706; 
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000010f0a7bb86900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h0000000000000000000000000001008f;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
-     #(CYCLE)
--    s_axis_tdata <= 512'h000f00001e00003c0000780000f00000e00100c003008007808c0100001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f0; 
-+    s_axis_tdata <= 512'h000f00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f0;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h0;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
-     #(CYCLE)
--    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000e00100c00300800700; 
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008d00000e00100c00300800700;
-     s_axis_tkeep <= 64'h0000000000007fff;
--    s_axis_tuser <= 128'h0;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b1;
--	#CYCLE
--	s_axis_tvalid <= 1'b0;
--	s_axis_tlast <= 1'b0;
--    #(40*CYCLE)
--    s_axis_tdata <= 512'h000000000000000004000000020000000d009a201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h0000000000000000000000000000000100114f4e1f00f2f1d204dededede6f6f6f6f1dde1140000001003300004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000004000000020000000d009a201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c0000;
-+    s_axis_tkeep <= 64'h000000000000001f;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000010f1117da3300f2f1d204dededede6f6f6f6f09de1140000001004700004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000004000000020000000d009a201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000080ffff0000ffffffffffffffffffffffffffffffffffffffff;
-+    s_axis_tkeep <= 64'h0000000001ffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000000012055a3400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000004000000020000000d009a201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000001000;
-+    s_axis_tkeep <= 64'h0000000003ffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000000f127bb16900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000004000000020000000d009a201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h000f00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f0;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b0;
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008d00000e00100c00300800700;
-+    s_axis_tkeep <= 64'h0000000000007fff;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b1;
--	#CYCLE
--	s_axis_tvalid <= 1'b0;
--	s_axis_tlast <= 1'b0;
--    #(5*CYCLE)
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000001001215593400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000;
-+    s_axis_tkeep <= 64'h0000000003ffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000010f125b286900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h000f00001e00003c0000780000f00000e00100c00300809701000e00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f0;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000e00100c00300800700;
-+    s_axis_tkeep <= 64'h0000000000007fff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h0000000000000000000000000000000100194f461f00f2f1d204dededede6f6f6f6f1dde1140000001003300004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c0000;
-+    s_axis_tkeep <= 64'h000000000000001f;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000010f1917d23300f2f1d204dededede6f6f6f6f09de1140000001004700004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h0000000000000000000000000000000000000000000000000000000000000000000000000000008000000000ffffffffffffffffffffffffffffffffffffffff;
-+    s_axis_tkeep <= 64'h0000000001ffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000001af5513400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000001000;
-+    s_axis_tkeep <= 64'h0000000003ffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000000f1a7ba96900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h000f00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f0;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008d00000e00100c00300800700;
-+    s_axis_tkeep <= 64'h0000000000007fff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000001001a15513400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000;
-+    s_axis_tkeep <= 64'h0000000003ffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000010f1a5b186900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h000f00001e00003c0000780000f00000e00100c00300809f01000e00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f0;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000e00100c00300800700;
-+    s_axis_tkeep <= 64'h0000000000007fff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h0000000000000000000000000000000100214f3e1f00f2f1d204dededede6f6f6f6f1dde1140000001003300004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c0000;
-+    s_axis_tkeep <= 64'h000000000000001f;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000010f2117ca3300f2f1d204dededede6f6f6f6f09de1140000001004700004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h0000000000000000000000000000000000000000000000000000000000000000000000000000008000000000ffffffffffffffffffffffffffffffffffffffff;
-+    s_axis_tkeep <= 64'h0000000001ffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000000022f5493400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000001000;
-+    s_axis_tkeep <= 64'h0000000003ffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000000f2259816900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h000f00001e00003c0000780000f00000e00100c00300802f03000e00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f0;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000e00100c00300800700;
-+    s_axis_tkeep <= 64'h0000000000007fff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000001002215493400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000;
-+    s_axis_tkeep <= 64'h0000000003ffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000010f227ba06900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h000f00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f0;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008d00000e00100c00300800700;
-+    s_axis_tkeep <= 64'h0000000000007fff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h0000000000000000000000000000000100294f361f00f2f1d204dededede6f6f6f6f1dde1140000001003300004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c0000;
-+    s_axis_tkeep <= 64'h000000000000001f;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000010f2917c23300f2f1d204dededede6f6f6f6f09de1140000001004700004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h0000000000000000000000000000000000000000000000000000000000000000000000000000008000000000ffffffffffffffffffffffffffffffffffffffff;
-+    s_axis_tkeep <= 64'h0000000001ffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000002af5413400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000001000;
-+    s_axis_tkeep <= 64'h0000000003ffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000000f2a7b996900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h000f00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f0;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b0;
--	#CYCLE
--    s_axis_tdata <= 512'h000000000000000002000000040000001a008d201a0013001300090000006f6f6f6fd79b1140000001002e000045000801000081a401bdfefd3c050000000000; 
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008d00000e00100c00300800700;
-+    s_axis_tkeep <= 64'h0000000000007fff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000001002a15413400f2f1d204dededede6f6f6f6f08de1140000001004800004500080f0000810504030201000b0a09080706;
-     s_axis_tkeep <= 64'hffffffffffffffff;
--    s_axis_tuser <= 128'h00000000000000000000000000000040;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b0;
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000;
-+    s_axis_tkeep <= 64'h0000000003ffffff;
-     s_axis_tvalid <= 1'b1;
-     s_axis_tlast <= 1'b1;
--	// #CYCLE
--    // s_axis_tdata <= 512'h11; 
--    // s_axis_tkeep <= 64'h0000000000000001;
--    // s_axis_tuser <= 128'h00000000000000000000000000000040;
--    // s_axis_tvalid <= 1'b1;
--    // s_axis_tlast <= 1'b1;
--	#CYCLE
--	s_axis_tdata <= 0;
--	s_axis_tkeep <= 0;
--	s_axis_tuser <= 0;
--	s_axis_tvalid <= 1'b0;
--	s_axis_tlast <= 1'b0;
--
--    #(40*CYCLE);
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h000000000000000000000000000000010f2a5b086900f2f1d204dededede6f6f6f6fd3dd1140000001007d00004500080f0000810504030201000b0a09080706;
-+    s_axis_tkeep <= 64'hffffffffffffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b0;
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h000f00001e00003c0000780000f00000e00100c00300809f01000e00001e00003c0000780000f00000e00100c00300800700000f00001e00003c0000780000f0;
-+    s_axis_tkeep <= 64'hffffffffffffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b0;
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f00000e00100c00300800700;
-+    s_axis_tkeep <= 64'h0000000000007fff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    
-+    
-+    // stateconf.txt:
-+    s_axis_tdata <= 512'h00000000000000000000000000000001001355541c00f2f1d204dededede6f6f6f6f20de1140000001003000004500080f0000810504030201000b0a09080706;
-+    s_axis_tkeep <= 64'hffffffffffffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b0;
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004;
-+    s_axis_tkeep <= 64'h0000000000000003;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000002001351531c00f2f1d204dededede6f6f6f6f20de1140000001003000004500080f0000810504030201000b0a09080706;
-+    s_axis_tkeep <= 64'hffffffffffffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b0;
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000404;
-+    s_axis_tkeep <= 64'h0000000000000003;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h0000000000000000000000000000000300134d521c00f2f1d204dededede6f6f6f6f20de1140000001003000004500080f0000810504030201000b0a09080706;
-+    s_axis_tkeep <= 64'hffffffffffffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b0;
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000804;
-+    s_axis_tkeep <= 64'h0000000000000003;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000004001349511c00f2f1d204dededede6f6f6f6f20de1140000001003000004500080f0000810504030201000b0a09080706;
-+    s_axis_tkeep <= 64'hffffffffffffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b0;
-+    #(CYCLE)
-+    s_axis_tdata <= 512'h00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c04;
-+    s_axis_tkeep <= 64'h0000000000000003;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(100*CYCLE)
-+    
-+    
-+    
-+    s_axis_tdata <= 512'h0000000000000000020000000a0000000200624d1a00e110d204dededede6f6f6f6f22de1140000001002e000045000801000081050403020100090000000000;
-+    s_axis_tkeep <= 64'hffffffffffffffff;
-+    s_axis_tvalid <= 1'b1;
-+    s_axis_tlast <= 1'b1;
-+    #CYCLE
-+    s_axis_tvalid <= 1'b0;
-+    s_axis_tlast <= 1'b0;
-+    #(10000*CYCLE);
-+    $finish(0);
+-		case({parse_act[5:4], parse_act[0]})
+-			// 2B
+-			3'b011: begin
+-				val_out_type_nxt = 2'b01;
+-				case(parse_act[3:1])
+-					3'd0: val_out_nxt[15:0] = phv_in[PHV_2B_START_POS+16*0 +: 16];
+-					3'd1: val_out_nxt[15:0] = phv_in[PHV_2B_START_POS+16*1 +: 16];
+-					3'd2: val_out_nxt[15:0] = phv_in[PHV_2B_START_POS+16*2 +: 16];
+-					3'd3: val_out_nxt[15:0] = phv_in[PHV_2B_START_POS+16*3 +: 16];
+-					3'd4: val_out_nxt[15:0] = phv_in[PHV_2B_START_POS+16*4 +: 16];
+-					3'd5: val_out_nxt[15:0] = phv_in[PHV_2B_START_POS+16*5 +: 16];
+-					3'd6: val_out_nxt[15:0] = phv_in[PHV_2B_START_POS+16*6 +: 16];
+-					3'd7: val_out_nxt[15:0] = phv_in[PHV_2B_START_POS+16*7 +: 16];
+-				endcase
+-			end
+-			// 4B
+-			3'b101: begin
+-				val_out_type_nxt = 2'b10;
+-				case(parse_act[3:1])
+-					3'd0: val_out_nxt[31:0] = phv_in[PHV_4B_START_POS+32*0 +: 32];
+-					3'd1: val_out_nxt[31:0] = phv_in[PHV_4B_START_POS+32*1 +: 32];
+-					3'd2: val_out_nxt[31:0] = phv_in[PHV_4B_START_POS+32*2 +: 32];
+-					3'd3: val_out_nxt[31:0] = phv_in[PHV_4B_START_POS+32*3 +: 32];
+-					3'd4: val_out_nxt[31:0] = phv_in[PHV_4B_START_POS+32*4 +: 32];
+-					3'd5: val_out_nxt[31:0] = phv_in[PHV_4B_START_POS+32*5 +: 32];
+-					3'd6: val_out_nxt[31:0] = phv_in[PHV_4B_START_POS+32*6 +: 32];
+-					3'd7: val_out_nxt[31:0] = phv_in[PHV_4B_START_POS+32*7 +: 32];
+-				endcase
+-			end
+-			// 6B
+-			3'b111: begin
+-				val_out_type_nxt = 2'b11;
+-				case(parse_act[3:1])
+-					3'd0: val_out_nxt[47:0] = phv_in[PHV_6B_START_POS+48*0 +: 48];
+-					3'd1: val_out_nxt[47:0] = phv_in[PHV_6B_START_POS+48*1 +: 48];
+-					3'd2: val_out_nxt[47:0] = phv_in[PHV_6B_START_POS+48*2 +: 48];
+-					3'd3: val_out_nxt[47:0] = phv_in[PHV_6B_START_POS+48*3 +: 48];
+-					3'd4: val_out_nxt[47:0] = phv_in[PHV_6B_START_POS+48*4 +: 48];
+-					3'd5: val_out_nxt[47:0] = phv_in[PHV_6B_START_POS+48*5 +: 48];
+-					3'd6: val_out_nxt[47:0] = phv_in[PHV_6B_START_POS+48*6 +: 48];
+-					3'd7: val_out_nxt[47:0] = phv_in[PHV_6B_START_POS+48*7 +: 48];
+-				endcase
+-			end
+-			default: begin
+-				val_out_type_nxt = 0;
+-				val_out_nxt = 0;
+-			end
+-		endcase
+-	end
++	val_out_valid_nxt = parse_act_valid;
++	
++	case({parse_act[5:4], parse_act[0]})
++		// 2B
++		3'b011: begin
++			val_out_type_nxt = 2'b01;
++			case(parse_act[3:1])
++				3'd0: val_out_nxt[15:0] = phv_in[PHV_2B_START_POS+16*0 +: 16];
++				3'd1: val_out_nxt[15:0] = phv_in[PHV_2B_START_POS+16*1 +: 16];
++				3'd2: val_out_nxt[15:0] = phv_in[PHV_2B_START_POS+16*2 +: 16];
++				3'd3: val_out_nxt[15:0] = phv_in[PHV_2B_START_POS+16*3 +: 16];
++				3'd4: val_out_nxt[15:0] = phv_in[PHV_2B_START_POS+16*4 +: 16];
++				3'd5: val_out_nxt[15:0] = phv_in[PHV_2B_START_POS+16*5 +: 16];
++				3'd6: val_out_nxt[15:0] = phv_in[PHV_2B_START_POS+16*6 +: 16];
++				3'd7: val_out_nxt[15:0] = phv_in[PHV_2B_START_POS+16*7 +: 16];
++			endcase
++		end
++		// 4B
++		3'b101: begin
++			val_out_type_nxt = 2'b10;
++			case(parse_act[3:1])
++				3'd0: val_out_nxt[31:0] = phv_in[PHV_4B_START_POS+32*0 +: 32];
++				3'd1: val_out_nxt[31:0] = phv_in[PHV_4B_START_POS+32*1 +: 32];
++				3'd2: val_out_nxt[31:0] = phv_in[PHV_4B_START_POS+32*2 +: 32];
++				3'd3: val_out_nxt[31:0] = phv_in[PHV_4B_START_POS+32*3 +: 32];
++				3'd4: val_out_nxt[31:0] = phv_in[PHV_4B_START_POS+32*4 +: 32];
++				3'd5: val_out_nxt[31:0] = phv_in[PHV_4B_START_POS+32*5 +: 32];
++				3'd6: val_out_nxt[31:0] = phv_in[PHV_4B_START_POS+32*6 +: 32];
++				3'd7: val_out_nxt[31:0] = phv_in[PHV_4B_START_POS+32*7 +: 32];
++			endcase
++		end
++		// 6B
++		3'b111: begin
++			val_out_type_nxt = 2'b11;
++			case(parse_act[3:1])
++				3'd0: val_out_nxt[47:0] = phv_in[PHV_6B_START_POS+48*0 +: 48];
++				3'd1: val_out_nxt[47:0] = phv_in[PHV_6B_START_POS+48*1 +: 48];
++				3'd2: val_out_nxt[47:0] = phv_in[PHV_6B_START_POS+48*2 +: 48];
++				3'd3: val_out_nxt[47:0] = phv_in[PHV_6B_START_POS+48*3 +: 48];
++				3'd4: val_out_nxt[47:0] = phv_in[PHV_6B_START_POS+48*4 +: 48];
++				3'd5: val_out_nxt[47:0] = phv_in[PHV_6B_START_POS+48*5 +: 48];
++				3'd6: val_out_nxt[47:0] = phv_in[PHV_6B_START_POS+48*6 +: 48];
++				3'd7: val_out_nxt[47:0] = phv_in[PHV_6B_START_POS+48*7 +: 48];
++			endcase
++		end
++		default: begin
++			val_out_type_nxt = 0;
++			val_out_nxt = 0;
++		end
++	endcase
  end
  
- rmt_wrapper #(
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/tcl/proj_pkt_gen.tcl parametric_menshen/tcl/proj_pkt_gen.tcl
+ 
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/sub_parser.v parametric_menshen/sub_parser.v
+--- menshen/sub_parser.v
++++ parametric_menshen/sub_parser.v
+@@ -37,29 +37,29 @@
+ 	if (parse_act_valid) begin
+ 		val_out_valid_nxt = 1;
+ 		val_out_seq_nxt = parse_act[3:1];
+-		
+-		case({parse_act[5:4], parse_act[0]})
+-			// 2B
+-			3'b011: begin
+-				val_out_type_nxt = 2'b01;
+-				val_out_nxt[15:0] = pkts_hdr[(parse_act[12:6])*8 +: 16];
+-			end
+-			// 4B
+-			3'b101: begin
+-				val_out_type_nxt = 2'b10;
+-				val_out_nxt[31:0] = pkts_hdr[(parse_act[12:6])*8 +: 32];
+-			end
+-			// 6B
+-			3'b111: begin
+-				val_out_type_nxt = 2'b11;
+-				val_out_nxt[47:0] = pkts_hdr[(parse_act[12:6])*8 +: 48];
+-			end
+-			default: begin
+-				val_out_type_nxt = 0;
+-				val_out_nxt = 0;
+-			end
+-		endcase
+ 	end
++	
++	case({parse_act[5:4], parse_act[0]})
++		// 2B
++		3'b011: begin
++			val_out_type_nxt = 2'b01;
++			val_out_nxt[15:0] = pkts_hdr[(parse_act[12:6])*8 +: 16];
++		end
++		// 4B
++		3'b101: begin
++			val_out_type_nxt = 2'b10;
++			val_out_nxt[31:0] = pkts_hdr[(parse_act[12:6])*8 +: 32];
++		end
++		// 6B
++		3'b111: begin
++			val_out_type_nxt = 2'b11;
++			val_out_nxt[47:0] = pkts_hdr[(parse_act[12:6])*8 +: 48];
++		end
++		default: begin
++			val_out_type_nxt = 0;
++			val_out_nxt = 0;
++		end
++	endcase
+ end
+ 
+ always @(posedge clk) begin
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/tcl/proj_pkt_gen.tcl parametric_menshen/tcl/proj_pkt_gen.tcl
 --- menshen/tcl/proj_pkt_gen.tcl
 +++ parametric_menshen/tcl/proj_pkt_gen.tcl
 @@ -2,14 +2,12 @@
@@ -6073,7 +7150,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/tcl/proj_pkt_gen.tcl parametr
  read_verilog "./stage.v"
  read_verilog "./last_stage.v"
  read_verilog "./output_arbiter.v"
-diff -ruN '--exclude=.git' '--exclude=p4c' menshen/tcl/proj_sim.tcl parametric_menshen/tcl/proj_sim.tcl
+diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/tcl/proj_sim.tcl parametric_menshen/tcl/proj_sim.tcl
 --- menshen/tcl/proj_sim.tcl
 +++ parametric_menshen/tcl/proj_sim.tcl
 @@ -2,22 +2,14 @@
@@ -6160,7 +7237,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/tcl/proj_sim.tcl parametric_m
  read_verilog "./action/action_engine.v"
  read_verilog "./action/alu_1.v"
  read_verilog "./action/alu_2.v"
-@@ -111,13 +125,18 @@
+@@ -111,13 +125,19 @@
  read_verilog "./lookup/lookup_engine_top.v"
  read_verilog "./lookup/lke_cam_part.v"
  read_verilog "./lookup/lke_ram_part.v"
@@ -6175,6 +7252,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/tcl/proj_sim.tcl parametric_m
 +add_files -fileset sim_1 -norecurse tb/tb_rmt_wrapper_modules.sv
 +add_files -fileset sim_1 -norecurse tb/tb_rmt_wrapper_stages.sv
 +add_files -fileset sim_1 -norecurse tb/tb_rmt_wrapper_moreStages.sv
++add_files -fileset sim_1 -norecurse tb/tb_rmt_wrapper_throughput.sv
 +set_property top tb_rmt_wrapper_calc [get_filesets sim_1]
 +set_property top_lib xil_defaultlib [get_filesets sim_1]
  update_compile_order -fileset sim_1
@@ -6183,7 +7261,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' menshen/tcl/proj_sim.tcl parametric_m
  set_property include_dirs ${proj_dir} [get_filesets sim_1]
  set_property simulator_language Mixed [current_project]
  set_property verilog_define { {SIMULATION=1} } [get_filesets sim_1]
-@@ -140,4 +159,6 @@
+@@ -140,4 +160,6 @@
  launch_simulation -simset sim_1 -mode behavioral
  run 10us
  

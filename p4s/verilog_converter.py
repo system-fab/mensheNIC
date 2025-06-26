@@ -16,6 +16,15 @@ def gen_ctrl_pkt(module_info, data):
                 /IP(src='111.111.111.111', dst='222.222.222.222')/UDP(sport=1234, dport=0xf1f2) \
                 /Raw(load=raw_load)
     return pkt
+# Use this version of the function if instead of the VLAN ID the L4 port is used
+#def gen_ctrl_pkt(module_info, data):
+#    raw_load = bytes(4) + bytes.fromhex(module_info)
+#    raw_load = raw_load + bytes(15)      # padding + cookie
+#    raw_load = raw_load + bytes.fromhex(data)
+#    pkt = Ether(src='00:01:02:03:04:05', dst='06:07:08:09:0a:0b') \
+#                /IP(src='111.111.111.111', dst='222.222.222.222')/UDP(sport=1234, dport=0xf1f2) \
+#                /Raw(load=raw_load)
+#    return pkt
 
 def parse_configuration(filename):
     pkts = []
@@ -91,11 +100,15 @@ def output_to_file(file_name):
 
 
 
+programs_num = 1
+if len(sys.argv)>1:
+	programs_num = int(sys.argv[1])
 
 sys.stdout = open("vivado_format.txt",'w')
 
 # CONFIGURATION PACKETS
-output_to_file("p4_generated/conf1.txt")
+for i in range(1, programs_num+1):
+	output_to_file("p4_generated/conf" + str(i) + ".txt")
 #output_to_file("p4_generated/confsys.txt")
 output_to_file("p4_generated/stateconf.txt")
 
