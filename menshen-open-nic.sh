@@ -43,7 +43,6 @@ cp patch_files/opennic_integration.tcl menshen/tcl/
 # ON SHELL
 rm open-nic-shell/src/qdma_subsystem/qdma_subsystem_function.sv
 cp arfs/qdma_subsystem_function.sv open-nic-shell/src/qdma_subsystem/qdma_subsystem_function.sv
-patch open-nic-shell/script/build.tcl < patch_files/build.patch
 
 if [[ "$1" != "$implementation" ]];
 then
@@ -56,6 +55,8 @@ then
     # ABS PATH PATCHES
     VAR=$(realpath open-nic-tbs)
     sed -i "s|{{VAR}}|${VAR}|g" "open-nic-shell/script/build.tcl"
+else
+    patch open-nic-shell/script/build.tcl < patch_files/build_impl.patch
 fi
 
 # ABS PATH PATCHES

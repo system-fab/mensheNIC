@@ -21,4 +21,12 @@
  # Read the source files from each module
  # - First, source "build.tcl" if it is defined under `module_dir`
  # - Then, read all the RTL files under `module_dir` (excluding sub-directories)
-
+@@ -445,7 +461,7 @@
+ # Implement design
+ if {$impl} {
+     update_compile_order -fileset sources_1
+-    _do_impl $jobs {"Vivado Implementation Defaults"}
++    _do_impl $jobs {"Congestion_SSI_SpreadLogic_low"}
+ }
+ 
+ if {$post_impl} {

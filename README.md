@@ -20,7 +20,7 @@ menshen-open-nic/
 └── menshen-open-nic.sh         # Script for project generation
 ```
 ## How to build
-In order to build successfully the project, the [Xilinx Content Addressable Memory (CAM) IP](https://www.amd.com/en/products/adaptive-socs-and-fpgas/intellectual-property/ef-di-cam.html) licese must be obtained and installed. <br />
+In order to build successfully the project, the [Xilinx Content Addressable Memory (CAM) IP](https://www.amd.com/en/products/adaptive-socs-and-fpgas/intellectual-property/ef-di-cam.html) license must be obtained and installed. <br />
 The build process consists on running a script that will clone the OpenNIC repository and patch the files necessary for building and testing the component on the OpenNIC platform.
 1. Clone the repo and enter the folder you just cloned
    ```sh
