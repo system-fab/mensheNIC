@@ -1357,7 +1357,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
  
  assign parse_action_ind[0] = parse_action[0][12:6];
  assign parse_action_ind[1] = parse_action[1][12:6];
-@@ -177,34 +176,143 @@
+@@ -177,34 +176,158 @@
  wire discard_signal;
  assign discard_signal = phv_fifo_out[128];
  
@@ -1373,8 +1373,9 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
 +reg [(C_AXIS_DATA_WIDTH/8)-1:0] pkts_tkeep_stored [2:0];
 +reg                             pkts_tlast_stored [2:0];
 +
-+reg [C_AXIS_DATA_WIDTH-1:0]     temp_pkt_tdata[1:0];
-+reg [C_AXIS_DATA_WIDTH-1:0]     mask[1:0];
++reg [9:0]                       temp_index [9:0];
++reg [47:0]                      temp_sub_depar_val [9:0];
++reg [1:0]                       field_type [9:0];
 +
  localparam		IDLE=0,
 -				WAIT_1CYCLE_RAM=1,
@@ -1422,11 +1423,12 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
 +always @(posedge clk) begin
 +    if(~aresetn) begin
 +		state <= IDLE;
-+
-+        temp_pkt_tdata[0] <= {C_AXIS_DATA_WIDTH{1'b0}};
-+        temp_pkt_tdata[1] <= {C_AXIS_DATA_WIDTH{1'b0}};
-+		mask[0]            <= {C_AXIS_DATA_WIDTH{1'b1}};
-+		mask[1]            <= {C_AXIS_DATA_WIDTH{1'b1}};
++        
++        for (j=0; j<10; j=j+1) begin
++            temp_index[j] <= 0;
++            temp_sub_depar_val[j] <= 0;
++            field_type[j] <= 0;
++        end
 +        
 +		for (j=0; j<3; j=j+1) begin
 +			pkts_tdata_stored[j] <= 0;
@@ -1449,53 +1451,66 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
 +    else begin
 +		state <= state_next;
 +
-+        temp_pkt_tdata[0] <= {C_AXIS_DATA_WIDTH{1'b0}};
-+        temp_pkt_tdata[1] <= {C_AXIS_DATA_WIDTH{1'b0}};
-+		mask[0]            <= {C_AXIS_DATA_WIDTH{1'b1}};
-+		mask[1]            <= {C_AXIS_DATA_WIDTH{1'b1}};
-+
-+        for (j=0; j<5; j=j+1) begin
++        pkts_tdata_stored[0] <= fst_half_fifo_tdata;
++		pkts_tdata_stored[1] <= snd_half_fifo_tdata;
++		
++        for (j=0; j<10; j=j+1) begin
 +            if(parse_action[j][0] & sub_depar_val_out_valid_d1[j]) begin
++				temp_index[j] <= parse_action_ind_10b[j]<<3;
 +                case(sub_depar_val_out_type_d1[j])
 +                    2'b01: begin
-+						   temp_pkt_tdata[0][parse_action_ind_10b[j]<<3 +: 16] <= sub_depar_val_out_swapped[j][32+:16];
-+						   mask[0][parse_action_ind_10b[j]<<3 +: 16] <= 16'b0;
++						   field_type[j] <= 2'b01;
++						   temp_sub_depar_val[j] <= {32'b0, sub_depar_val_out_swapped[j][32+:16]};
 +					end
 +                    2'b10: begin
-+						   temp_pkt_tdata[0][parse_action_ind_10b[j]<<3 +: 32] <= sub_depar_val_out_swapped[j][16+:32];
-+						   mask[0][parse_action_ind_10b[j]<<3 +: 32] <= 32'b0;
++						   field_type[j] <= 2'b10;
++						   temp_sub_depar_val[j] <= {16'b0, sub_depar_val_out_swapped[j][16+:32]};
 +					end
 +                    2'b11: begin
-+						   temp_pkt_tdata[0][parse_action_ind_10b[j]<<3 +: 48] <= sub_depar_val_out_swapped[j][0+:48];
-+						   mask[0][parse_action_ind_10b[j]<<3 +: 48] <= 48'b0;
++						   field_type[j] <= 2'b11;
++						   temp_sub_depar_val[j] <= sub_depar_val_out_swapped[j][0+:48];
 +					end
-+                endcase
-+            end
-+            
-+            if(parse_action[j+5][0]) begin
-+                case(sub_depar_val_out_type_d1[j+5] & sub_depar_val_out_valid_d1[j+5])
-+                    2'b01: begin
-+						   temp_pkt_tdata[1][parse_action_ind_10b[j+5]<<3 +: 16] <= sub_depar_val_out_swapped[j+5][32+:16];
-+						   mask[1][parse_action_ind_10b[j]<<3 +: 16] <= 16'b0;
-+					end
-+                    2'b10: begin
-+						   temp_pkt_tdata[1][parse_action_ind_10b[j+5]<<3 +: 32] <= sub_depar_val_out_swapped[j+5][16+:32];
-+						   mask[1][parse_action_ind_10b[j]<<3 +: 32] <= 32'b0;
-+					end
-+                    2'b11: begin
-+						   temp_pkt_tdata[1][parse_action_ind_10b[j+5]<<3 +: 48] <= sub_depar_val_out_swapped[j+5][0+:48];
-+						   mask[1][parse_action_ind_10b[j]<<3 +: 48] <= 48'b0;
++					2'b00: begin
++						   field_type[j] <= 2'b00;
++						   temp_sub_depar_val[j] <= 0;
 +					end
 +                endcase
 +            end
 +        end
++		for (j=0; j<5; j=j+1) begin
++			case(field_type[j])
++					2'b01: begin
++						pkts_tdata_stored[0][temp_index[j] +: 16] <= temp_sub_depar_val[j][0 +: 16];
++					end
++					2'b10: begin
++						pkts_tdata_stored[0][temp_index[j] +: 32] <= temp_sub_depar_val[j][0 +: 32];
++					end
++					2'b11: begin
++						pkts_tdata_stored[0][temp_index[j] +: 48] <= temp_sub_depar_val[j];
++					end
++					2'b00: begin
++					end
++			endcase
 +
-+        pkts_tdata_stored[0] <= (fst_half_fifo_tdata & mask[0]) | temp_pkt_tdata[0];
++			case(field_type[j+5])
++					2'b01: begin
++						pkts_tdata_stored[1][temp_index[j+5] +: 16] <= temp_sub_depar_val[j+5][0 +: 16];
++					end
++					2'b10: begin
++						pkts_tdata_stored[1][temp_index[j+5] +: 32] <= temp_sub_depar_val[j+5][0 +: 32];
++					end
++					2'b11: begin
++						pkts_tdata_stored[1][temp_index[j+5] +: 48] <= temp_sub_depar_val[j+5];
++					end
++					2'b00: begin
++					end
++			endcase
++		end
++        
 +        pkts_tuser_stored[0] <= phv_fifo_out[0+:C_AXIS_TUSER_WIDTH];
 +        pkts_tkeep_stored[0] <= fst_half_fifo_tkeep;
 +        pkts_tlast_stored[0] <= fst_half_fifo_tlast;
 +
-+        pkts_tdata_stored[1] <= (snd_half_fifo_tdata & mask[1]) | temp_pkt_tdata[1];
 +        pkts_tuser_stored[1] <= snd_half_fifo_tuser;
 +        pkts_tkeep_stored[1] <= snd_half_fifo_tkeep;
 +        pkts_tlast_stored[1] <= snd_half_fifo_tlast;
@@ -1525,7 +1540,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
  always @(*) begin
  
  	phv_fifo_rd_en = 0;
-@@ -212,37 +320,22 @@
+@@ -212,37 +335,22 @@
  	fst_half_fifo_rd_en = 0;
  	snd_half_fifo_rd_en = 0;
  	pkt_fifo_rd_en = 0;
@@ -1568,7 +1583,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
  			if (!fst_half_fifo_empty 
  					&& !snd_half_fifo_empty 
  					&& !phv_fifo_empty) begin
-@@ -252,47 +345,45 @@
+@@ -252,47 +360,45 @@
  					phv_fifo_rd_en = 1;
  				end
  				else begin
@@ -1639,7 +1654,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
  
  			state_next = FLUSH_PKT_0;
  		end
-@@ -301,15 +392,15 @@
+@@ -301,15 +407,15 @@
  			vlan_fifo_rd_en = 1;
  			fst_half_fifo_rd_en = 1;
  			snd_half_fifo_rd_en = 1;
@@ -1661,7 +1676,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
  					state_next = IDLE;
  				end
  				else begin
-@@ -318,14 +409,15 @@
+@@ -318,14 +424,15 @@
  			end
  		end
  		FLUSH_PKT_1: begin
@@ -1682,7 +1697,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
  					state_next = IDLE;
  				end
  				else begin
-@@ -334,11 +426,12 @@
+@@ -334,11 +441,12 @@
  			end
  		end
  		FLUSH_PKT: begin
@@ -1699,7 +1714,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
  				if (depar_out_tready) begin
  					pkt_fifo_rd_en = 1;
  					depar_out_tvalid_next = 1;
-@@ -374,46 +467,46 @@
+@@ -374,46 +482,46 @@
  	endcase
  end
  
@@ -1786,7 +1801,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
  
  
  //===================== sub deparser
-@@ -430,7 +523,7 @@
+@@ -430,7 +538,7 @@
  			.aresetn			(aresetn),
  			.parse_act_valid	(sub_depar_act_valid[index]),
  			.parse_act			(parse_action[index][5:0]),
@@ -1795,7 +1810,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
  			.val_out_valid		(sub_depar_val_out_valid[index]),
  			.val_out			(sub_depar_val_out[index]),
  			.val_out_type		(sub_depar_val_out_type[index])
-@@ -454,7 +547,7 @@
+@@ -454,7 +562,7 @@
             SU_WRITE_C = 3;
  
  assign mod_id = ctrl_s_axis_tdata[368+:8];
