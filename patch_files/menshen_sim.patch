@@ -1291,7 +1291,24 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
  
  `define SWAP_BYTE_ORDER(idx) \
  	assign sub_depar_val_out_swapped[idx] = {	sub_depar_val_out_d1[idx][0+:8], \
-@@ -84,13 +67,7 @@
+@@ -69,11 +52,11 @@
+ 	output reg												pkt_fifo_rd_en,
+ 
+ 	// output
+-	output reg [C_AXIS_DATA_WIDTH-1:0]						depar_out_tdata,
+-	output reg [C_AXIS_DATA_WIDTH/8-1:0]					depar_out_tkeep,
+-	output reg [C_AXIS_TUSER_WIDTH-1:0]						depar_out_tuser,
+-	output reg												depar_out_tvalid,
+-	output reg												depar_out_tlast,
++	output [C_AXIS_DATA_WIDTH-1:0]							depar_out_tdata,
++	output [C_AXIS_DATA_WIDTH/8-1:0]						depar_out_tkeep,
++	output [C_AXIS_TUSER_WIDTH-1:0]							depar_out_tuser,
++	output													depar_out_tvalid,
++	output													depar_out_tlast,
+ 	input													depar_out_tready,
+ 
+ 	// control path
+@@ -84,31 +67,46 @@
  	input													ctrl_s_axis_tlast
  );
  
@@ -1305,8 +1322,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
 +integer i, j;
  
  wire [159:0] bram_out;
- reg [159:0] bram_out_d1;
-@@ -98,17 +75,39 @@
+-reg [159:0] bram_out_d1;
+ wire [6:0] parse_action_ind [0:9];
  wire [9:0] parse_action_ind_10b [0:9];
  
  
@@ -1342,41 +1359,58 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
 +    else begin
 +        sub_depar_in <= phv_fifo_out;
 +    
-+        parse_action[9] <= bram_out_d1[0+:16];
-+        parse_action[8] <= bram_out_d1[16+:16];
-+        parse_action[7] <= bram_out_d1[32+:16];
-+        parse_action[6] <= bram_out_d1[48+:16];
-+        parse_action[5] <= bram_out_d1[64+:16];
-+        parse_action[4] <= bram_out_d1[80+:16];
-+        parse_action[3] <= bram_out_d1[96+:16];
-+        parse_action[2] <= bram_out_d1[112+:16];
-+        parse_action[1] <= bram_out_d1[128+:16];
-+        parse_action[0] <= bram_out_d1[144+:16];
++        parse_action[9] <= bram_out[0+:16];
++        parse_action[8] <= bram_out[16+:16];
++        parse_action[7] <= bram_out[32+:16];
++        parse_action[6] <= bram_out[48+:16];
++        parse_action[5] <= bram_out[64+:16];
++        parse_action[4] <= bram_out[80+:16];
++        parse_action[3] <= bram_out[96+:16];
++        parse_action[2] <= bram_out[112+:16];
++        parse_action[1] <= bram_out[128+:16];
++        parse_action[0] <= bram_out[144+:16];
 +    end
 +end
  
  assign parse_action_ind[0] = parse_action[0][12:6];
  assign parse_action_ind[1] = parse_action[1][12:6];
-@@ -177,34 +176,158 @@
- wire discard_signal;
- assign discard_signal = phv_fifo_out[128];
+@@ -150,8 +148,6 @@
+ 			sub_depar_val_out_type_d1[i] <= 0;
+ 		end
+ 		sub_depar_val_out_valid_d1 <= 0;
+-
+-		bram_out_d1 <= 0;
+ 	end
+ 	else begin
+ 		for (i=0; i<10; i=i+1) begin
+@@ -159,7 +155,6 @@
+ 			sub_depar_val_out_type_d1[i] <= sub_depar_val_out_type[i];
+ 		end
+ 		sub_depar_val_out_valid_d1 <= sub_depar_val_out_valid;
+-		bram_out_d1 <= bram_out;
+ 	end
+ end
  
-+reg [1:0]                       chunk_index;
-+reg [C_AXIS_DATA_WIDTH-1:0]     depar_out_tdata_next[2:0];
-+reg [C_AXIS_TUSER_WIDTH-1:0]    depar_out_tuser_next[2:0];
-+reg [C_AXIS_DATA_WIDTH/8-1:0]   depar_out_tkeep_next[2:0];
-+reg                             depar_out_tlast_next[2:0];
-+reg                             depar_out_tvalid_next;
-+
-+reg [C_AXIS_DATA_WIDTH-1:0]     pkts_tdata_stored [2:0];
-+reg [C_AXIS_TUSER_WIDTH-1:0]    pkts_tuser_stored [2:0];
-+reg [(C_AXIS_DATA_WIDTH/8)-1:0] pkts_tkeep_stored [2:0];
-+reg                             pkts_tlast_stored [2:0];
+@@ -174,246 +169,335 @@
+ `SWAP_BYTE_ORDER(8)
+ `SWAP_BYTE_ORDER(9)
+ 
+-wire discard_signal;
+-assign discard_signal = phv_fifo_out[128];
++reg [C_AXIS_DATA_WIDTH-1:0]     pkts_tdata_stored [1:0];
++reg [C_AXIS_TUSER_WIDTH-1:0]    pkts_tuser_stored [1:0];
++reg [(C_AXIS_DATA_WIDTH/8)-1:0] pkts_tkeep_stored [1:0];
++reg                             pkts_tlast_stored [1:0];
 +
 +reg [9:0]                       temp_index [9:0];
 +reg [47:0]                      temp_sub_depar_val [9:0];
 +reg [1:0]                       field_type [9:0];
 +
++wire [C_AXIS_DATA_WIDTH-1:0]     output_fifo_tdata [2:0];
++wire [C_AXIS_TUSER_WIDTH-1:0]    output_fifo_tuser [2:0];
++wire [(C_AXIS_DATA_WIDTH/8)-1:0] output_fifo_tkeep [2:0];
++wire                             output_fifo_tlast [2:0];
+ 
  localparam		IDLE=0,
 -				WAIT_1CYCLE_RAM=1,
 -				START_SUB_DEPARSE=2,
@@ -1402,58 +1436,41 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
 -reg [C_AXIS_TUSER_WIDTH-1:0]		pkts_tuser_stored_1p_next, pkts_tuser_stored_2p_next;
 -reg [(C_AXIS_DATA_WIDTH/8)-1:0]		pkts_tkeep_stored_1p_next, pkts_tkeep_stored_2p_next;
 -reg									pkts_tlast_stored_1p_next, pkts_tlast_stored_2p_next;
-+				WAIT_RAM_1=1,
-+				WAIT_RAM_2=2,
-+				START_SUB_DEPARSE=3,
-+				FINISH_SUB_DEPARSER_0=4,
-+				FINISH_SUB_DEPARSER_1=5,
-+				FINISH_SUB_DEPARSER_2=6,
-+				FLUSH_PKT_0=7,
-+				FLUSH_PKT_1=8,
-+				FLUSH_PKT_2=9,
-+				FLUSH_PKT_3=10,
-+				FLUSH_PKT=11,
-+				DROP_PKT=12,
-+				DROP_PKT_REMAINING=13,
-+				EMPTY=14;
++				WAIT_RAM_1=1;
++				
++localparam		FLUSH_PKT_1=1,
++				FLUSH_PKT_2=2,
++				DROP=3;
  
- reg [4:0] state, state_next;
- 
+-reg [4:0] state, state_next;
++reg state, state_next;
++reg [1:0] state2, state2_next;
 +
 +always @(posedge clk) begin
 +    if(~aresetn) begin
 +		state <= IDLE;
-+        
++		state2 <= IDLE;
++		
 +        for (j=0; j<10; j=j+1) begin
 +            temp_index[j] <= 0;
 +            temp_sub_depar_val[j] <= 0;
 +            field_type[j] <= 0;
 +        end
 +        
-+		for (j=0; j<3; j=j+1) begin
++		for (j=0; j<2; j=j+1) begin
 +			pkts_tdata_stored[j] <= 0;
 +			pkts_tuser_stored[j] <= 0;
 +			pkts_tkeep_stored[j] <= 0;
 +			pkts_tlast_stored[j] <= 0;
-+
-+			depar_out_tdata_next[j] <= 0;
-+			depar_out_tuser_next[j] <= 0;
-+			depar_out_tkeep_next[j] <= 0;
-+			depar_out_tlast_next[j] <= 0;
 +		end
-+
-+		depar_out_tdata <= 0;
-+        depar_out_tkeep <= 0;
-+        depar_out_tuser <= 0;
-+        depar_out_tlast <= 0;
-+        depar_out_tvalid <= 0;
 +	end
 +    else begin
 +		state <= state_next;
++		state2 <= state2_next;
 +
 +        pkts_tdata_stored[0] <= fst_half_fifo_tdata;
-+        pkts_tdata_stored[1] <= snd_half_fifo_tdata;
-+        
++		pkts_tdata_stored[1] <= snd_half_fifo_tdata;
++		
 +        for (j=0; j<10; j=j+1) begin
 +            if(parse_action[j][0] & sub_depar_val_out_valid_d1[j]) begin
 +				temp_index[j] <= parse_action_ind_10b[j]<<3;
@@ -1506,53 +1523,94 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
 +					end
 +			endcase
 +		end
-+
-+        pkts_tuser_stored[0] <= phv_fifo_out[0+:C_AXIS_TUSER_WIDTH];
++		
++		// TODO: the tuser signal must be saved in N registers and pipelined untill the result is ready and it can be stored here
++		// alternatively it can be buffered since adding interstage registers could degrade timing closure and routing, but to have the
++		// real modified tuser signal I should use the sequent line.
++		// N.B: I should keep in mind that open-nic requires the tuser signal to containt the size of the packet (see documentation)
++        //pkts_tuser_stored[0] <= phv_fifo_out[0+:C_AXIS_TUSER_WIDTH];
++        pkts_tuser_stored[0] <= fst_half_fifo_tuser;
 +        pkts_tkeep_stored[0] <= fst_half_fifo_tkeep;
 +        pkts_tlast_stored[0] <= fst_half_fifo_tlast;
 +
 +        pkts_tuser_stored[1] <= snd_half_fifo_tuser;
 +        pkts_tkeep_stored[1] <= snd_half_fifo_tkeep;
 +        pkts_tlast_stored[1] <= snd_half_fifo_tlast;
-+        
-+        pkts_tdata_stored[2] <= pkt_fifo_tdata;
-+        pkts_tuser_stored[2] <= pkt_fifo_tuser;
-+        pkts_tkeep_stored[2] <= pkt_fifo_tkeep;
-+        pkts_tlast_stored[2] <= pkt_fifo_tlast;
-+        
-+        
-+		for (j=0; j<3; j=j+1) begin
-+			depar_out_tdata_next[j] <= pkts_tdata_stored[j];
-+			depar_out_tuser_next[j] <= pkts_tuser_stored[j];
-+			depar_out_tkeep_next[j] <= pkts_tkeep_stored[j];
-+			depar_out_tlast_next[j] <= pkts_tlast_stored[j];
-+		end
-+
-+        depar_out_tdata <= depar_out_tdata_next[chunk_index];
-+        depar_out_tkeep <= depar_out_tkeep_next[chunk_index];
-+        depar_out_tuser <= depar_out_tuser_next[chunk_index];
-+        depar_out_tlast <= depar_out_tlast_next[chunk_index];
-+        depar_out_tvalid <= depar_out_tvalid_next;
 +    end
 +end
 +
++reg phv_fifo_rd_en_r;
++reg start_sud_depar;
 +
++always @(posedge clk) begin
++    if(~aresetn) begin
++		sub_depar_act_valid <= 0;
++		phv_fifo_rd_en <= 0;
++	end
++    else begin
++    	sub_depar_act_valid <= {10{start_sud_depar}};
++    	phv_fifo_rd_en <= phv_fifo_rd_en_r;
++    end
++end
++
++// delayed signals waiting for pkts_tdata_stored
++reg start_flush[4:0];
++reg discard_prop[4:0];
++
++always @(posedge clk) begin
++    if(~aresetn) begin
++		start_flush[0] <= 0;
++		start_flush[1] <= 0;
++		start_flush[2] <= 0;
++		start_flush[3] <= 0;
++		start_flush[4] <= 0;
++		
++		fst_half_fifo_rd_en <= 0;
++		snd_half_fifo_rd_en <= 0;
++		
++		discard_prop[0] <= 0;
++		discard_prop[1] <= 0;
++		discard_prop[2] <= 0;
++		discard_prop[3] <= 0;
++		discard_prop[4] <= 0;
++	end
++    else begin
++    	start_flush[0] <= start_sud_depar;
++    	start_flush[1] <= start_flush[0];
++    	start_flush[2] <= start_flush[1];
++    	start_flush[3] <= start_flush[2];
++    	start_flush[4] <= start_flush[3];
++    	
++    	fst_half_fifo_rd_en <= start_flush[3];
++		snd_half_fifo_rd_en <= start_flush[3];
++		
++		discard_prop[0] <= phv_fifo_out[128];
++		discard_prop[1] <= discard_prop[0];
++		discard_prop[2] <= discard_prop[1];
++		discard_prop[3] <= discard_prop[2];
++		discard_prop[4] <= discard_prop[3];
++    end
++end
++
++wire output_fifo_full;
+ 
  always @(*) begin
  
- 	phv_fifo_rd_en = 0;
-@@ -212,37 +335,22 @@
- 	fst_half_fifo_rd_en = 0;
- 	snd_half_fifo_rd_en = 0;
- 	pkt_fifo_rd_en = 0;
+-	phv_fifo_rd_en = 0;
++	phv_fifo_rd_en_r = 0;
+ 	vlan_fifo_rd_en = 0;
+-	fst_half_fifo_rd_en = 0;
+-	snd_half_fifo_rd_en = 0;
+-	pkt_fifo_rd_en = 0;
 -	// output
 -	depar_out_tdata_next = depar_out_tdata;
 -	depar_out_tuser_next = depar_out_tuser;
 -	depar_out_tkeep_next = depar_out_tkeep;
 -	depar_out_tlast_next = depar_out_tlast;
- 	depar_out_tvalid_next = 0;
+-	depar_out_tvalid_next = 0;
 -
- 	sub_depar_act_valid = 10'b0;
-+	chunk_index = 0;
+-	sub_depar_act_valid = 10'b0;
++	start_sud_depar = 0;
  
  	state_next = state;
 -	//
@@ -1568,25 +1626,26 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
  
  	case (state) 
  		IDLE: begin
- 			if (!vlan_fifo_empty) begin
+-			if (!vlan_fifo_empty) begin
 -				state_next = WAIT_1CYCLE_RAM;
++			if (!vlan_fifo_empty && !output_fifo_full) begin
 +				state_next = WAIT_RAM_1;
  			end
  		end
 -		WAIT_1CYCLE_RAM: begin
 -			state_next = START_SUB_DEPARSE;
-+		WAIT_RAM_1: begin
-+			state_next = WAIT_RAM_2;
- 		end
+-		end
 -		START_SUB_DEPARSE: begin
-+		WAIT_RAM_2: begin
++		WAIT_RAM_1: begin
  			if (!fst_half_fifo_empty 
  					&& !snd_half_fifo_empty 
  					&& !phv_fifo_empty) begin
-@@ -252,47 +360,45 @@
- 					phv_fifo_rd_en = 1;
- 				end
- 				else begin
+ 
+-				if (discard_signal == 1) begin
+-					state_next = DROP_PKT;
+-					phv_fifo_rd_en = 1;
+-				end
+-				else begin
 -					sub_depar_act_valid = 10'b1111111111;
 -
 -					state_next = EMPTY_2;
@@ -1594,89 +1653,136 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
 -					pkts_tuser_stored_1p_next = phv_fifo_out[0+:128];
 -					pkts_tkeep_stored_1p_next = fst_half_fifo_tkeep;
 -					pkts_tlast_stored_1p_next = fst_half_fifo_tlast;
-+					state_next = START_SUB_DEPARSE;
-+					// pkts_tdata_stored_1p_next = fst_half_fifo_tdata;
-+					// pkts_tuser_stored_1p_next = phv_fifo_out[0+:C_AXIS_TUSER_WIDTH];
-+					// pkts_tkeep_stored_1p_next = fst_half_fifo_tkeep;
-+					// pkts_tlast_stored_1p_next = fst_half_fifo_tlast;
- 					//
- 				end
+-					//
+-				end
++				phv_fifo_rd_en_r = 1;
++				
++				vlan_fifo_rd_en = 1;
++				start_sud_depar = 1;
++				state_next = IDLE;
  			end
  		end
 -		EMPTY_1: begin
 -			// sub_depar_act_valid = 10'b1111111111;
 -			state_next = EMPTY_2;
-+		START_SUB_DEPARSE: begin
-+			sub_depar_act_valid = 10'b1111111111;
-+			state_next = EMPTY;
- 		end
+-		end
 -		EMPTY_2: begin
-+		EMPTY: begin
- 			state_next = FINISH_SUB_DEPARSER_0;
+-			state_next = FINISH_SUB_DEPARSER_0;
 -			pkts_tdata_stored_2p_next = snd_half_fifo_tdata;
 -			pkts_tuser_stored_2p_next = snd_half_fifo_tuser;
 -			pkts_tkeep_stored_2p_next = snd_half_fifo_tkeep;
 -			pkts_tlast_stored_2p_next = snd_half_fifo_tlast;
-+			// pkts_tdata_stored_2p_next = snd_half_fifo_tdata;
-+			// pkts_tuser_stored_2p_next = snd_half_fifo_tuser;
-+			// pkts_tkeep_stored_2p_next = snd_half_fifo_tkeep;
-+			// pkts_tlast_stored_2p_next = snd_half_fifo_tlast;
- 		end
- 		FINISH_SUB_DEPARSER_0: begin
+-		end
+-		FINISH_SUB_DEPARSER_0: begin
 -			`SUB_DEPARSE_1P(0)
 -			`SUB_DEPARSE_1P(1)
 -			`SUB_DEPARSE_2P(5)
-+			// `SUB_DEPARSE_1P(0)
-+			// `SUB_DEPARSE_1P(1)
-+			// `SUB_DEPARSE_2P(5)
++	endcase
++end
  
- 			state_next = FINISH_SUB_DEPARSER_1;
- 		end
- 		FINISH_SUB_DEPARSER_1: begin
+-			state_next = FINISH_SUB_DEPARSER_1;
+-		end
+-		FINISH_SUB_DEPARSER_1: begin
 -			`SUB_DEPARSE_1P(2)
 -			`SUB_DEPARSE_2P(6)
 -			`SUB_DEPARSE_2P(7)
-+			// `SUB_DEPARSE_1P(2)
-+			// `SUB_DEPARSE_2P(6)
-+			// `SUB_DEPARSE_2P(7)
++wire output_fifo_empty;
++reg output_fifo_rd_en_r;
++wire discard_signal;
  
- 			state_next = FINISH_SUB_DEPARSER_2;
- 		end
- 		FINISH_SUB_DEPARSER_2: begin
+-			state_next = FINISH_SUB_DEPARSER_2;
+-		end
+-		FINISH_SUB_DEPARSER_2: begin
 -			`SUB_DEPARSE_1P(3)
 -			`SUB_DEPARSE_1P(4)
 -			`SUB_DEPARSE_2P(8)
 -			`SUB_DEPARSE_2P(9)
-+			// `SUB_DEPARSE_1P(3)
-+			// `SUB_DEPARSE_1P(4)
-+			// `SUB_DEPARSE_2P(8)
-+			// `SUB_DEPARSE_2P(9)
++fallthrough_small_fifo #(
++	.WIDTH((C_AXIS_DATA_WIDTH+C_AXIS_TUSER_WIDTH+C_AXIS_DATA_WIDTH/8+1)*2+1),
++	.MAX_DEPTH_BITS(5),
++	.PROG_FULL_THRESHOLD((2**5)-5)
++)
++output_fifo (
++	.clk			(clk),
++	.reset			(~aresetn),
++	.din			({pkts_tdata_stored[0], pkts_tdata_stored[1], 
++					  pkts_tuser_stored[0], pkts_tuser_stored[1],
++					  pkts_tkeep_stored[0], pkts_tkeep_stored[1],
++					  pkts_tlast_stored[0], pkts_tlast_stored[1],
++					  discard_prop[4]}),
++	.wr_en			(start_flush[4]), 
++	.rd_en			(output_fifo_rd_en_r),
++	.dout			({output_fifo_tdata[0], output_fifo_tdata[1],
++					  output_fifo_tuser[0], output_fifo_tuser[1],
++					  output_fifo_tkeep[0], output_fifo_tkeep[1],
++					  output_fifo_tlast[0], output_fifo_tlast[1],
++					  discard_signal}),
++	.full			(),
++	.nearly_full	(),
++	.prog_full		(output_fifo_full),
++	.empty			(output_fifo_empty)
++);
  
- 			state_next = FLUSH_PKT_0;
- 		end
-@@ -301,15 +407,15 @@
- 			vlan_fifo_rd_en = 1;
- 			fst_half_fifo_rd_en = 1;
- 			snd_half_fifo_rd_en = 1;
+-			state_next = FLUSH_PKT_0;
+-		end
+-		FLUSH_PKT_0: begin
+-			phv_fifo_rd_en = 1;
+-			vlan_fifo_rd_en = 1;
+-			fst_half_fifo_rd_en = 1;
+-			snd_half_fifo_rd_en = 1;
 -
 -			depar_out_tdata_next = pkts_tdata_stored_1p;
 -			depar_out_tuser_next = pkts_tuser_stored_1p;
 -			depar_out_tkeep_next = pkts_tkeep_stored_1p;
 -			depar_out_tlast_next = pkts_tlast_stored_1p;
-+			chunk_index = 0;
-+			// depar_out_tdata_next = pkts_tdata_stored_1p;
-+			// depar_out_tuser_next = pkts_tuser_stored_1p;
-+			// depar_out_tkeep_next = pkts_tkeep_stored_1p;
-+			// depar_out_tlast_next = pkts_tlast_stored_1p;
- 
- 			if (depar_out_tready) begin
- 				depar_out_tvalid_next = 1;
+-
+-			if (depar_out_tready) begin
+-				depar_out_tvalid_next = 1;
 -				if (pkts_tlast_stored_1p) begin
-+				if (pkts_tlast_stored[0]) begin
- 					state_next = IDLE;
- 				end
- 				else begin
-@@ -318,14 +424,15 @@
+-					state_next = IDLE;
+-				end
+-				else begin
+-					state_next = FLUSH_PKT_1;
+-				end
++assign output_fifo_tdata[2] = pkt_fifo_tdata;
++assign output_fifo_tuser[2] = pkt_fifo_tuser;
++assign output_fifo_tkeep[2] = pkt_fifo_tkeep;
++assign output_fifo_tlast[2] = pkt_fifo_tlast;
++
++reg depar_out_tvalid_next;
++reg [1:0] chunk_index;
++
++always @(*) begin
++
++	output_fifo_rd_en_r = 0;
++	pkt_fifo_rd_en = 0;
++	depar_out_tvalid_next = 0;
++	chunk_index = 0;
++	
++	state2_next = state2;
++
++	case (state2) 
++		IDLE: begin
++			chunk_index = 0;
++			if (!output_fifo_empty) begin
++                if (discard_signal) begin
++                    output_fifo_rd_en_r = 1;
++                    if (!(output_fifo_tlast[0] || output_fifo_tlast[1])) begin
++                        state2_next = DROP;
++                    end
++                end
++                else begin
++			        if (depar_out_tready) begin
++				        depar_out_tvalid_next = 1;
++				        if (output_fifo_tlast[0]) begin
++					        output_fifo_rd_en_r = 1;
++					        state2_next = IDLE;
++				        end
++				        else begin
++					        state2_next = FLUSH_PKT_1;
++				        end
++			        end
++			    end
  			end
  		end
  		FLUSH_PKT_1: begin
@@ -1684,37 +1790,79 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
 -			depar_out_tuser_next = pkts_tuser_stored_2p;
 -			depar_out_tkeep_next = pkts_tkeep_stored_2p;
 -			depar_out_tlast_next = pkts_tlast_stored_2p;
-+			chunk_index = 1;
-+			// depar_out_tdata_next = pkts_tdata_stored_2p;
-+			// depar_out_tuser_next = pkts_tuser_stored_2p;
-+			// depar_out_tkeep_next = pkts_tkeep_stored_2p;
-+			// depar_out_tlast_next = pkts_tlast_stored_2p;
- 
- 			if (depar_out_tready) begin
- 				depar_out_tvalid_next = 1;
+-
+-			if (depar_out_tready) begin
+-				depar_out_tvalid_next = 1;
 -				if (pkts_tlast_stored_2p) begin
-+				if (pkts_tlast_stored[1]) begin
- 					state_next = IDLE;
- 				end
- 				else begin
-@@ -334,11 +441,12 @@
- 			end
- 		end
- 		FLUSH_PKT: begin
-+			chunk_index = 2;
- 			if (!pkt_fifo_empty) begin
+-					state_next = IDLE;
+-				end
+-				else begin
+-					state_next = FLUSH_PKT;
+-				end
+-			end
+-		end
+-		FLUSH_PKT: begin
+-			if (!pkt_fifo_empty) begin
 -				depar_out_tdata_next = pkt_fifo_tdata;
 -				depar_out_tuser_next =  pkt_fifo_tuser;
 -				depar_out_tkeep_next =  pkt_fifo_tkeep;
 -				depar_out_tlast_next =  pkt_fifo_tlast;
-+				// depar_out_tdata_next = pkt_fifo_tdata;
-+				// depar_out_tuser_next =  pkt_fifo_tuser;
-+				// depar_out_tkeep_next =  pkt_fifo_tkeep;
-+				// depar_out_tlast_next =  pkt_fifo_tlast;
- 				if (depar_out_tready) begin
- 					pkt_fifo_rd_en = 1;
- 					depar_out_tvalid_next = 1;
-@@ -374,46 +482,46 @@
+-				if (depar_out_tready) begin
+-					pkt_fifo_rd_en = 1;
+-					depar_out_tvalid_next = 1;
+-					if (pkt_fifo_tlast) begin
+-						state_next = IDLE;
+-					end
+-				end
++			chunk_index = 1;
++		    if (depar_out_tready) begin
++			    depar_out_tvalid_next = 1;
++			    if (output_fifo_tlast[1]) begin
++				    output_fifo_rd_en_r = 1;
++				    state2_next = IDLE;
++			    end
++			    else begin
++			        output_fifo_rd_en_r = 1;
++				    state2_next = FLUSH_PKT_2;
++			    end
+ 			end
+ 		end
+-		DROP_PKT: begin
+-			if (fst_half_fifo_tlast==1 
+-				|| snd_half_fifo_tlast==1) begin
+-				fst_half_fifo_rd_en = 1;
+-				snd_half_fifo_rd_en = 1;
+-				vlan_fifo_rd_en = 1;
+-
+-				state_next = IDLE;
+-			end
+-			else begin
+-				fst_half_fifo_rd_en = 1;
+-				snd_half_fifo_rd_en = 1;
+-				vlan_fifo_rd_en = 1;
+-
+-				state_next = DROP_PKT_REMAINING;
++		FLUSH_PKT_2: begin
++			chunk_index = 2;
++		    if (depar_out_tready) begin
++			    if (!pkt_fifo_empty) begin
++				    depar_out_tvalid_next = 1;
++				    pkt_fifo_rd_en = 1;
++				    if (pkt_fifo_tlast) begin
++					    state2_next = IDLE;
++				    end
++			    end
+ 			end
+ 		end
+-		DROP_PKT_REMAINING: begin
+-			pkt_fifo_rd_en = 1;
++		DROP: begin
++		    pkt_fifo_rd_en = 1;
+ 			if (pkt_fifo_tlast) begin
+-				state_next = IDLE;
++				state2_next = IDLE;
+ 			end
+ 		end
  	endcase
  end
  
@@ -1758,50 +1906,32 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
 -		depar_out_tvalid <= depar_out_tvalid_next;
 -	end
 -end
-+// always @(posedge clk) begin
-+// 	if (~aresetn) begin
-+// 		state <= IDLE;
-+// 		//
-+// 		pkts_tdata_stored_1p <= 0;
-+// 		pkts_tuser_stored_1p <= 0;
-+// 		pkts_tkeep_stored_1p <= 0;
-+// 		pkts_tlast_stored_1p <= 0;
-+// 		//
-+// 		pkts_tdata_stored_2p <= 0;
-+// 		pkts_tuser_stored_2p <= 0;
-+// 		pkts_tkeep_stored_2p <= 0;
-+// 		pkts_tlast_stored_2p <= 0;
-+// 		//
-+// 		depar_out_tdata <= 0;
-+// 		depar_out_tkeep <= 0;
-+// 		depar_out_tuser <= 0;
-+// 		depar_out_tlast <= 0;
-+// 		depar_out_tvalid <= 0;
-+// 	end
-+// 	else begin
-+// 		state <= state_next;
-+// 		//
-+// 		pkts_tdata_stored_1p <= pkts_tdata_stored_1p_next;
-+// 		pkts_tuser_stored_1p <= pkts_tuser_stored_1p_next;
-+// 		pkts_tkeep_stored_1p <= pkts_tkeep_stored_1p_next;
-+// 		pkts_tlast_stored_1p <= pkts_tlast_stored_1p_next;
-+// 		//
-+// 		pkts_tdata_stored_2p <= pkts_tdata_stored_2p_next;
-+// 		pkts_tuser_stored_2p <= pkts_tuser_stored_2p_next;
-+// 		pkts_tkeep_stored_2p <= pkts_tkeep_stored_2p_next;
-+// 		pkts_tlast_stored_2p <= pkts_tlast_stored_2p_next;
-+// 		//
-+// 		depar_out_tdata <= depar_out_tdata_next;
-+// 		depar_out_tkeep <= depar_out_tkeep_next;
-+// 		depar_out_tuser <= depar_out_tuser_next;
-+// 		depar_out_tlast <= depar_out_tlast_next;
-+// 		depar_out_tvalid <= depar_out_tvalid_next;
-+// 	end
-+// end
++
++wire depar_out_tvalid_r;
++wire depar_out_fifo_empty;
++
++fallthrough_small_fifo #(
++	.WIDTH(C_AXIS_DATA_WIDTH+C_AXIS_TUSER_WIDTH+C_AXIS_DATA_WIDTH/8+1+1),
++	.MAX_DEPTH_BITS(2)
++)
++depar_out_fifo (
++	.clk			(clk),
++	.reset			(~aresetn),
++	.din			({output_fifo_tdata[chunk_index], output_fifo_tkeep[chunk_index], output_fifo_tuser[chunk_index], output_fifo_tlast[chunk_index], depar_out_tvalid_next}),
++	.wr_en			(depar_out_tvalid_next), 
++	.rd_en			(depar_out_tready),
++	.dout			({depar_out_tdata, depar_out_tkeep, depar_out_tuser, depar_out_tlast, depar_out_tvalid_r}),
++	.full			(),
++	.nearly_full	(),
++	.prog_full		(),
++	.empty			(depar_out_fifo_empty)
++);
++
++assign depar_out_tvalid = depar_out_tvalid_r & (~depar_out_fifo_empty);
  
  
  //===================== sub deparser
-@@ -430,7 +538,7 @@
+@@ -430,7 +514,7 @@
  			.aresetn			(aresetn),
  			.parse_act_valid	(sub_depar_act_valid[index]),
  			.parse_act			(parse_action[index][5:0]),
@@ -1813,7 +1943,88 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/depar_do_depar
 diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/deparser_top.v parametric_menshen/deparser_top.v
 --- menshen/deparser_top.v
 +++ parametric_menshen/deparser_top.v
-@@ -142,16 +142,16 @@
+@@ -29,6 +29,7 @@
+ 	output									depar_out_tvalid,
+ 	output 									depar_out_tlast,
+ 	input									depar_out_tready,
++	output reg                              back_pressure,
+ 
+ 	// control path
+ 	input [C_AXIS_DATA_WIDTH-1:0]			ctrl_s_axis_tdata,
+@@ -70,7 +71,8 @@
+ 
+ fallthrough_small_fifo #(
+ 	.WIDTH(C_AXIS_DATA_WIDTH+C_AXIS_TUSER_WIDTH+C_AXIS_DATA_WIDTH/8+1),
+-	.MAX_DEPTH_BITS(4)
++	.MAX_DEPTH_BITS(7),
++	.PROG_FULL_THRESHOLD((2**7)-4)
+ )
+ fst_half_fifo (
+ 	.din				({fst_half_fifo_tdata_in_r, fst_half_fifo_tuser_in_r, fst_half_fifo_tkeep_in_r, fst_half_fifo_tlast_in_r}),
+@@ -82,8 +84,8 @@
+ 	.dout				({fst_half_fifo_tdata_out, fst_half_fifo_tuser_out, fst_half_fifo_tkeep_out, fst_half_fifo_tlast_out}),
+ 	//
+ 	.full				(),
+-	.prog_full			(),
+-	.nearly_full		(fst_half_fifo_full),
++	.prog_full			(fst_half_fifo_full),
++	.nearly_full		(),
+ 	.empty				(fst_half_fifo_empty),
+ 	.reset				(~aresetn),
+ 	.clk				(axis_clk)
+@@ -91,7 +93,8 @@
+ 
+ fallthrough_small_fifo #(
+ 	.WIDTH(C_AXIS_DATA_WIDTH+C_AXIS_TUSER_WIDTH+C_AXIS_DATA_WIDTH/8+1),
+-	.MAX_DEPTH_BITS(4)
++	.MAX_DEPTH_BITS(7),
++	.PROG_FULL_THRESHOLD((2**7)-4)
+ )
+ snd_half_fifo (
+ 	.din				({snd_half_fifo_tdata_in_r, snd_half_fifo_tuser_in_r, snd_half_fifo_tkeep_in_r, snd_half_fifo_tlast_in_r}),
+@@ -103,8 +106,8 @@
+ 	.dout				({snd_half_fifo_tdata_out, snd_half_fifo_tuser_out, snd_half_fifo_tkeep_out, snd_half_fifo_tlast_out}),
+ 	//
+ 	.full				(),
+-	.prog_full			(),
+-	.nearly_full		(snd_half_fifo_full),
++	.prog_full			(snd_half_fifo_full),
++	.nearly_full		(),
+ 	.empty				(snd_half_fifo_empty),
+ 	.reset				(~aresetn),
+ 	.clk				(axis_clk)
+@@ -118,21 +121,25 @@
+ wire vlan_fifo_full;
+ wire vlan_fifo_empty;
+ 
++reg [C_VLANID_WIDTH-1:0] vlan_fifo_in_r;
++reg vlan_valid_in_r;
++
+ // vlan fifo
+ fallthrough_small_fifo #(
+ 	.WIDTH(C_VLANID_WIDTH),
+-	.MAX_DEPTH_BITS(5)
++	.MAX_DEPTH_BITS(7),
++	.PROG_FULL_THRESHOLD((2**7)-4)
+ )
+ vlan_fifo (
+-	.din					(vlan_fifo_in),
+-	.wr_en					(vlan_valid_in),
++	.din					(vlan_fifo_in_r),
++	.wr_en					(vlan_valid_in_r),
+ 	//
+ 	.rd_en					(vlan_fifo_rd_en),
+ 	.dout					(vlan_fifo_out),
+ 	//
+ 	.full					(),
+-	.prog_full				(),
+-	.nearly_full			(vlan_fifo_full),
++	.prog_full				(vlan_fifo_full),
++	.nearly_full			(),
+ 	.empty					(vlan_fifo_empty),
+ 	.reset					(~aresetn),
+ 	.clk					(axis_clk)
+@@ -142,10 +149,9 @@
  wire [C_AXIS_TUSER_WIDTH-1:0]	seg_fifo_tuser_in, seg_fifo_tuser_out;
  wire [C_AXIS_DATA_WIDTH/8-1:0]	seg_fifo_tkeep_in, seg_fifo_tkeep_out;
  wire							seg_fifo_tlast_in, seg_fifo_tlast_out;
@@ -1821,35 +2032,34 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/deparser_top.v
 -wire seg_fifo_rd_en;
 -wire seg_fifo_full;
 -wire seg_fifo_empty;
--
--reg [C_AXIS_DATA_WIDTH-1:0]		seg_fifo_tdata_in_r;
--reg [C_AXIS_TUSER_WIDTH-1:0]	seg_fifo_tuser_in_r;
--reg [C_AXIS_DATA_WIDTH/8-1:0]	seg_fifo_tkeep_in_r;
--reg								seg_fifo_tlast_in_r;
--reg								seg_fifo_valid_in_r;
 +wire                            seg_fifo_valid_in, seg_fifo_rd_en;
 +wire                            seg_fifo_full;
 +wire                            seg_fifo_empty;
-+
-+reg [C_AXIS_DATA_WIDTH-1:0]		seg_fifo_tdata_in_r, seg_fifo_tdata_out_r;
-+reg [C_AXIS_TUSER_WIDTH-1:0]	seg_fifo_tuser_in_r, seg_fifo_tuser_out_r;
-+reg [C_AXIS_DATA_WIDTH/8-1:0]	seg_fifo_tkeep_in_r, seg_fifo_tkeep_out_r;
-+reg								seg_fifo_tlast_in_r, seg_fifo_tlast_out_r;
-+reg								seg_fifo_valid_in_r, seg_fifo_rd_en_r;
-+reg                             seg_fifo_empty_r;
+ 
+ reg [C_AXIS_DATA_WIDTH-1:0]		seg_fifo_tdata_in_r;
+ reg [C_AXIS_TUSER_WIDTH-1:0]	seg_fifo_tuser_in_r;
+@@ -155,7 +161,8 @@
  // seg fifo
  fallthrough_small_fifo #(
  	.WIDTH(C_AXIS_DATA_WIDTH+C_AXIS_TUSER_WIDTH+C_AXIS_DATA_WIDTH/8+1),
-@@ -163,7 +163,7 @@
- 	// .din					({seg_fifo_tdata_in, seg_fifo_tuser_in, seg_fifo_tkeep_in, seg_fifo_tlast_in}),
- 	// .wr_en					(seg_fifo_valid_in),
- 	//
--	.rd_en					(seg_fifo_rd_en),
-+	.rd_en					(seg_fifo_rd_en_r),
+-	.MAX_DEPTH_BITS(5)
++	.MAX_DEPTH_BITS(7),
++	.PROG_FULL_THRESHOLD((2**7)-4)
+ )
+ seg_fifo (
+ 	.din					({seg_fifo_tdata_in_r, seg_fifo_tuser_in_r, seg_fifo_tkeep_in_r, seg_fifo_tlast_in_r}),
+@@ -167,8 +174,8 @@
  	.dout					({seg_fifo_tdata_out, seg_fifo_tuser_out, seg_fifo_tkeep_out, seg_fifo_tlast_out}),
  	//
  	.full					(),
-@@ -176,6 +176,7 @@
+-	.prog_full				(),
+-	.nearly_full			(seg_fifo_full),
++	.prog_full				(seg_fifo_full),
++	.nearly_full			(),
+ 	.empty					(seg_fifo_empty),
+ 	.reset					(~aresetn),
+ 	.clk					(axis_clk)
+@@ -176,6 +183,7 @@
  
  //
  depar_wait_segs #(
@@ -1857,7 +2067,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/deparser_top.v
  )
  wait_segs
  (
-@@ -218,7 +219,8 @@
+@@ -218,7 +226,8 @@
  //
  depar_do_deparsing #(
  	.C_PKT_VEC_WIDTH(C_PKT_VEC_WIDTH),
@@ -1867,48 +2077,34 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/deparser_top.v
  )
  do_deparsing
  (
-@@ -247,11 +249,11 @@
- 	.snd_half_fifo_empty						(snd_half_fifo_empty),
- 	.snd_half_fifo_rd_en						(snd_half_fifo_rd_en),
- 	// segs
--	.pkt_fifo_tdata								(seg_fifo_tdata_out),
--	.pkt_fifo_tuser								(seg_fifo_tuser_out),
--	.pkt_fifo_tkeep								(seg_fifo_tkeep_out),
--	.pkt_fifo_tlast								(seg_fifo_tlast_out),
--	.pkt_fifo_empty								(seg_fifo_empty),
-+	.pkt_fifo_tdata								(seg_fifo_tdata_out_r),
-+	.pkt_fifo_tuser								(seg_fifo_tuser_out_r),
-+	.pkt_fifo_tkeep								(seg_fifo_tkeep_out_r),
-+	.pkt_fifo_tlast								(seg_fifo_tlast_out_r),
-+	.pkt_fifo_empty								(seg_fifo_empty_r),
- 	.pkt_fifo_rd_en								(seg_fifo_rd_en),
- 	// output
- 	.depar_out_tdata							(depar_out_tdata),
-@@ -289,6 +291,13 @@
+@@ -271,6 +280,8 @@
+ 
+ always @(posedge axis_clk) begin
+ 	if (~aresetn) begin
++	    vlan_fifo_in_r <= 0;
++        vlan_valid_in_r <= 0;
+ 		//
+ 		fst_half_fifo_tdata_in_r <= 0;
+ 		fst_half_fifo_tuser_in_r <= 0;
+@@ -289,8 +300,12 @@
  		seg_fifo_tkeep_in_r <= 0;
  		seg_fifo_tlast_in_r <= 0;
  		seg_fifo_valid_in_r <= 0;
-+		//
-+		seg_fifo_tdata_out_r <= 0;
-+		seg_fifo_tuser_out_r <= 0;
-+		seg_fifo_tkeep_out_r <= 0;
-+		seg_fifo_tlast_out_r <= 0;
-+		seg_fifo_rd_en_r <= 0;
-+		seg_fifo_empty_r <= 0;
++		
++		back_pressure <= 0;
  	end
  	else begin
++	    vlan_fifo_in_r <= vlan_fifo_in;
++        vlan_valid_in_r <= vlan_valid_in;
  		//
-@@ -309,6 +318,13 @@
+ 		fst_half_fifo_tdata_in_r <= fst_half_fifo_tdata_in;
+ 		fst_half_fifo_tuser_in_r <= fst_half_fifo_tuser_in;
+@@ -309,6 +324,8 @@
  		seg_fifo_tkeep_in_r <= seg_fifo_tkeep_in;
  		seg_fifo_tlast_in_r <= seg_fifo_tlast_in;
  		seg_fifo_valid_in_r <= seg_fifo_valid_in;
-+		//
-+		seg_fifo_tdata_out_r <= seg_fifo_tdata_out;
-+		seg_fifo_tuser_out_r <= seg_fifo_tuser_out;
-+		seg_fifo_tkeep_out_r <= seg_fifo_tkeep_out;
-+		seg_fifo_tlast_out_r <= seg_fifo_tlast_out;
-+		seg_fifo_rd_en_r <= seg_fifo_rd_en;
-+		seg_fifo_empty_r <= seg_fifo_empty;
++		
++		back_pressure <= ~seg_fifo_full;
  	end
  end
  
@@ -6163,7 +6359,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/pkt_filter.v p
  
  	input [31:0]		vlan_drop_flags,
  	output [31:0]		ctrl_token,
-@@ -19,39 +19,39 @@
+@@ -19,46 +19,47 @@
  
  	// input Slave AXI Stream
  	input [C_S_AXIS_DATA_WIDTH-1:0]			s_axis_tdata,
@@ -6220,10 +6416,77 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/pkt_filter.v p
  
  //
  assign s_axis_tready = !pkt_fifo_full;
+ 
+ fallthrough_small_fifo #(
+ 	.WIDTH(C_S_AXIS_DATA_WIDTH+C_S_AXIS_TUSER_WIDTH+C_S_AXIS_DATA_WIDTH/8+1),
+-	.MAX_DEPTH_BITS(5)
++	.MAX_DEPTH_BITS(7),
++	.PROG_FULL_THRESHOLD((2**7)-3)
+ )
+ seg_fifo (
+ 	.din					({s_axis_tdata, s_axis_tkeep, s_axis_tuser, s_axis_tlast}),
+@@ -68,8 +69,8 @@
+ 	.dout					({pkt_fifo_tdata, pkt_fifo_tkeep, pkt_fifo_tuser, pkt_fifo_tlast}),
+ 	//
+ 	.full					(),
+-	.prog_full				(),
+-	.nearly_full			(pkt_fifo_full),
++	.prog_full				(pkt_fifo_full),
++	.nearly_full			(),
+ 	.empty					(pkt_fifo_empty),
+ 	.reset					(~aresetn),
+ 	.clk					(clk)
+@@ -78,7 +79,8 @@
+ localparam WAIT_FIRST_PKT=0, 
+ 		   DROP_PKT=1, 
+ 		   FLUSH_DATA=2,
+-		   FLUSH_CTL = 3;
++		   FLUSH_CTL = 3,
++		   WAIT_1_CYCLE = 4;
+ 
+ 
+ reg [C_S_AXIS_DATA_WIDTH-1:0]		r_tdata;
+@@ -89,7 +91,7 @@
+ 
+ reg									r_s_tready;
+ 
+-reg [1:0] state, state_next;
++reg [2:0] state, state_next;
+ //1 for control, 0 for data;
+ reg 								c_switch;
+ wire								w_c_switch;
+@@ -133,7 +135,7 @@
+ 		WAIT_FIRST_PKT: begin
+ 			if (!pkt_fifo_empty) begin
+ 				if (m_axis_tready) begin
+-					if ((pkt_fifo_tdata[143:128]==`ETH_TYPE_IPV4) && 
++					if ((pkt_fifo_tdata[143:128] ==`ETH_TYPE_IPV4) && 
+ 						(pkt_fifo_tdata[223:216]==`IPPROT_UDP)) begin
+ 						//checkme: we put the security check here
+ 						// if(s_axis_tdata[335:320] == `CONTROL_PORT && cookie_w == cookie_val_d1) begin
+@@ -165,7 +167,7 @@
+ 
+ 						else if (pkt_fifo_tlast) begin
+ 							pkt_fifo_rd_en = 1;
+-							state_next = WAIT_FIRST_PKT;
++							state_next = WAIT_1_CYCLE;
+ 							c_switch = 1'b0;
+ 							vlan_id_valid_next = 1;
+ 							r_tvalid = 1;
+@@ -222,6 +224,9 @@
+ 				end
+ 			end
+ 		end
++		WAIT_1_CYCLE: begin
++			state_next = WAIT_FIRST_PKT;
++		end
+ 	endcase
+ end
+ 
 diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv parametric_menshen/rmt_wrapper.sv
 --- menshen/rmt_wrapper.sv
 +++ parametric_menshen/rmt_wrapper.sv
-@@ -0,0 +1,682 @@
+@@ -0,0 +1,595 @@
 +`timescale 1ns / 1ps
 +
 +module rmt_wrapper #(
@@ -6246,7 +6509,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv
 +	parameter KEY_OFF = 6*3+20,
 +	parameter C_VLANID_WIDTH = 12,
 +	parameter C_FIFO_BIT_WIDTH = 4,
-+	parameter NUM_OF_STAGES = 5
++	parameter NUM_OF_STAGES = 3
 +)
 +(
 +	input						clk,		// axis clk
@@ -6267,12 +6530,12 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv
 +	/*
 +     * output Master AXI Stream
 +     */
-+	output reg [C_S_AXIS_DATA_WIDTH-1:0]		m_axis_tdata,
-+	output reg [((C_S_AXIS_DATA_WIDTH/8))-1:0]	m_axis_tkeep,
-+	output reg [C_S_AXIS_TUSER_WIDTH-1:0]		m_axis_tuser,
-+	output reg					m_axis_tvalid,
-+	input						m_axis_tready,
-+	output reg					m_axis_tlast
++	output [C_S_AXIS_DATA_WIDTH-1:0]		m_axis_tdata,
++	output [((C_S_AXIS_DATA_WIDTH/8))-1:0]	m_axis_tkeep,
++	output [C_S_AXIS_TUSER_WIDTH-1:0]		m_axis_tuser,
++	output									m_axis_tvalid,
++	input									m_axis_tready,
++	output									m_axis_tlast
 +
 +	
 +);
@@ -6288,15 +6551,8 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv
 +logic [((C_S_AXIS_DATA_WIDTH/8))-1:0] s_axis_tkeep_r;
 +logic [C_S_AXIS_TUSER_WIDTH-1:0]      s_axis_tuser_r;
 +logic                                 s_axis_tvalid_r;
-+logic                                 s_axis_tready_r;
++logic                                 s_axis_tready_r, tready_pkt_filter;
 +logic                                 s_axis_tlast_r;
-+
-+logic [C_S_AXIS_DATA_WIDTH-1:0]       m_axis_tdata_r  [1:0];
-+logic [((C_S_AXIS_DATA_WIDTH/8))-1:0] m_axis_tkeep_r  [1:0];
-+logic [C_S_AXIS_TUSER_WIDTH-1:0]      m_axis_tuser_r  [1:0];
-+logic                                 m_axis_tvalid_r [1:0];
-+logic                                 m_axis_tready_r;
-+logic                                 m_axis_tlast_r  [1:0];
 +
 +logic [31:0] vlan_drop_flags_r;
 +logic [31:0] ctrl_token_r;
@@ -6415,20 +6671,20 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv
 +logic parser_m_axis_tlast;
 +logic parser_m_axis_tvalid;
 +
-+logic pkt_fifo_rd_en [1:0];
++logic pkt_fifo_rd_en;
 +logic pkt_fifo_nearly_full;
 +logic pkt_fifo_empty;
 +
 +assign s_axis_tready_f = !pkt_fifo_nearly_full;
-+
-+logic switch_in_pkt_fifo;      // logic used for the 2 deparsers, since the FSM inside can accept packets only at
-+logic switch_in_phv_fifo;      // half the frequency of the clock
-+logic switch_out;
++// equivalent to the old:
++// assign s_axis_tready_f = !pkt_fifo_nearly_full[0] && !pkt_fifo_nearly_full[1] &&
++//                          !pkt_fifo_nearly_full[2] && !pkt_fifo_nearly_full[3];
 +
 +// create a fifo interposed between the parser and the data cache
 +fallthrough_small_fifo #(
 +	.WIDTH(C_S_AXIS_DATA_WIDTH+C_S_AXIS_TUSER_WIDTH+C_S_AXIS_DATA_WIDTH/8+1),
-+	.MAX_DEPTH_BITS(C_FIFO_BIT_WIDTH)
++	.MAX_DEPTH_BITS(7),
++	.PROG_FULL_THRESHOLD((2**7)-4)
 +)
 +pkt_fifo (
 +	.clk			(clk),                         // input logic clk
@@ -6436,11 +6692,12 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv
 +	.din			({parser_m_axis_tdata, parser_m_axis_tuser,
 +				  parser_m_axis_tkeep, parser_m_axis_tlast}),     // input logic [704 : 0] din
 +	.wr_en			(parser_m_axis_tvalid),     // input logic wr_en
-+	.rd_en			(pkt_fifo_rd_en[switch_in_pkt_fifo]),           // input logic rd_en
++	.rd_en			(pkt_fifo_rd_en),           // input logic rd_en
 +	.dout			({pkt_fifo_tdata_out, pkt_fifo_tuser_out,
 +				  pkt_fifo_tkeep_out, pkt_fifo_tlast_out}),       // output logic [704 : 0] dout
 +	.full			(),
-+	.nearly_full		(pkt_fifo_nearly_full),     // output logic full
++	.nearly_full	(),
++	.prog_full		(pkt_fifo_nearly_full),     // output logic full
 +	.empty			(pkt_fifo_empty)            // output logic empty
 +);
 +
@@ -6448,7 +6705,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv
 +logic [PKT_VEC_WIDTH-1:0] phv_fifo_out;
 +logic last_stg_phv_out_valid;
 +
-+logic phv_fifo_rd_en [1:0];
++logic phv_fifo_rd_en;
 +logic phv_fifo_nearly_full;
 +logic phv_fifo_empty;
 +logic [(PKT_VEC_WIDTH/2)-1:0] high_phv_out;
@@ -6459,14 +6716,14 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv
 +// create 2 fifos (since each fifo is half the size of the phv) interposed between the phv exiting from the last stage and the phv entering the deparser
 +fallthrough_small_fifo #(
 +	.WIDTH(PKT_VEC_WIDTH/2),
-+	.MAX_DEPTH_BITS(6)
++	.MAX_DEPTH_BITS(7)
 +)
 +phv_fifo_1 (
 +	.clk			(clk),
 +	.reset			(~aresetn),
 +	.din			(last_stg_phv_out[(PKT_VEC_WIDTH/2)-1:0]),
 +	.wr_en			(last_stg_phv_out_valid),
-+	.rd_en			(phv_fifo_rd_en[switch_in_phv_fifo]),
++	.rd_en			(phv_fifo_rd_en),
 +	.dout			(low_phv_out),
 +	.full			(),
 +	.nearly_full		(phv_fifo_nearly_full),
@@ -6475,14 +6732,14 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv
 +
 +fallthrough_small_fifo #(
 +	.WIDTH(PKT_VEC_WIDTH/2),
-+	.MAX_DEPTH_BITS(6)
++	.MAX_DEPTH_BITS(7)
 +)
 +phv_fifo_2 (
 +	.clk			(clk),
 +	.reset			(~aresetn),
 +	.din			(last_stg_phv_out[PKT_VEC_WIDTH-1:(PKT_VEC_WIDTH/2)]),
 +	.wr_en			(last_stg_phv_out_valid),
-+	.rd_en			(phv_fifo_rd_en[switch_in_phv_fifo]),
++	.rd_en			(phv_fifo_rd_en),
 +	.dout			(high_phv_out),
 +	.full			(),
 +	.nearly_full		(),
@@ -6711,47 +6968,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv
 +	.c_m_axis_tvalid	(ctrl_s_axis_tvalid[NUM_OF_STAGES+1])
 +);
 +
-+
-+// logic used for the 2 deparsers, since the FSM inside can accept packets only at half the frequency of the clock
-+always @(posedge clk) begin
-+    if (~aresetn) begin
-+        switch_in_pkt_fifo <= 0;
-+    end
-+    else begin
-+        if(pkt_fifo_tlast_out && !pkt_fifo_empty && pkt_fifo_rd_en[switch_in_pkt_fifo])
-+        begin
-+            switch_in_pkt_fifo <= ~switch_in_pkt_fifo;
-+        end
-+    end
-+end
-+
-+always @(posedge clk) begin
-+    if (~aresetn) begin
-+        switch_in_phv_fifo <= 0;
-+    end
-+    else begin
-+        if(!phv_fifo_empty && phv_fifo_rd_en[switch_in_phv_fifo])
-+        begin
-+            switch_in_phv_fifo <= ~switch_in_phv_fifo;
-+        end
-+    end
-+end
-+
-+// per gli output faccio la stessa cosa, ma con uno switch diverso e il ready in lo metto uguale ad entrambi
-+always @(posedge clk) begin
-+    if (~aresetn) begin
-+        switch_out <= 0;
-+    end
-+    else begin
-+        if(m_axis_tlast_r[switch_out] && m_axis_tvalid_r[switch_out])
-+        begin
-+            switch_out <= ~switch_out;
-+        end
-+    end
-+end
-+
-+// N.B: ready in e control path sono quindi cortocircuitati su entrambi i moduli del deparser. Non serve fare uno switch per loro
-+
++logic depar_tready, depar_back_pressure;
 +
 +deparser_top #(
 +	.C_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH),
@@ -6759,7 +6976,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv
 +	.C_PKT_VEC_WIDTH(),
 +	.DEPARSER_MOD_ID()
 +)
-+phv_deparser_1 (
++phv_deparser (
 +	.axis_clk		(clk),
 +	.aresetn		(aresetn),
 +
@@ -6768,60 +6985,22 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv
 +	.pkt_fifo_tkeep		(pkt_fifo_tkeep_out),
 +	.pkt_fifo_tuser		(pkt_fifo_tuser_out),
 +	.pkt_fifo_tlast		(pkt_fifo_tlast_out),
-+	.pkt_fifo_empty		(pkt_fifo_empty | switch_in_pkt_fifo),
++	.pkt_fifo_empty		(pkt_fifo_empty),
 +	// output from STAGE
-+	.pkt_fifo_rd_en		(pkt_fifo_rd_en[0]),
++	.pkt_fifo_rd_en		(pkt_fifo_rd_en),
 +
 +	.phv_fifo_out		(phv_fifo_out),
-+	.phv_fifo_empty		(phv_fifo_empty | switch_in_phv_fifo),
-+	.phv_fifo_rd_en		(phv_fifo_rd_en[0]),
++	.phv_fifo_empty		(phv_fifo_empty),
++	.phv_fifo_rd_en		(phv_fifo_rd_en),
 +	// output
-+	.depar_out_tdata	(m_axis_tdata_r[0]),
-+	.depar_out_tkeep	(m_axis_tkeep_r[0]),
-+	.depar_out_tuser	(m_axis_tuser_r[0]),
-+	.depar_out_tvalid	(m_axis_tvalid_r[0]),
-+	.depar_out_tlast	(m_axis_tlast_r[0]),
++	.depar_out_tdata	(m_axis_tdata),
++	.depar_out_tkeep	(m_axis_tkeep),
++	.depar_out_tuser	(m_axis_tuser),
++	.depar_out_tvalid	(m_axis_tvalid),
++	.depar_out_tlast	(m_axis_tlast),
 +	// input
-+	.depar_out_tready	(m_axis_tready_r),
-+
-+	//control path
-+	.ctrl_s_axis_tdata	(ctrl_s_axis_tdata_sv[NUM_OF_STAGES+1]),
-+	.ctrl_s_axis_tuser	(ctrl_s_axis_tuser_sv[NUM_OF_STAGES+1]),
-+	.ctrl_s_axis_tkeep	(ctrl_s_axis_tkeep_sv[NUM_OF_STAGES+1]),
-+	.ctrl_s_axis_tvalid	(ctrl_s_axis_tvalid_sv[NUM_OF_STAGES+1]),
-+	.ctrl_s_axis_tlast	(ctrl_s_axis_tlast_sv[NUM_OF_STAGES+1])
-+);
-+
-+deparser_top #(
-+	.C_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH),
-+	.C_AXIS_TUSER_WIDTH(C_S_AXIS_TUSER_WIDTH),
-+	.C_PKT_VEC_WIDTH(),
-+	.DEPARSER_MOD_ID()
-+)
-+phv_deparser_2 (
-+	.axis_clk		(clk),
-+	.aresetn		(aresetn),
-+
-+	//data plane
-+	.pkt_fifo_tdata		(pkt_fifo_tdata_out),
-+	.pkt_fifo_tkeep		(pkt_fifo_tkeep_out),
-+	.pkt_fifo_tuser		(pkt_fifo_tuser_out),
-+	.pkt_fifo_tlast		(pkt_fifo_tlast_out),
-+	.pkt_fifo_empty		(pkt_fifo_empty | ~switch_in_pkt_fifo),
-+	// output from STAGE
-+	.pkt_fifo_rd_en		(pkt_fifo_rd_en[1]),
-+
-+	.phv_fifo_out		(phv_fifo_out),
-+	.phv_fifo_empty		(phv_fifo_empty | ~switch_in_phv_fifo),
-+	.phv_fifo_rd_en		(phv_fifo_rd_en[1]),
-+	// output
-+	.depar_out_tdata	(m_axis_tdata_r[1]),
-+	.depar_out_tkeep	(m_axis_tkeep_r[1]),
-+	.depar_out_tuser	(m_axis_tuser_r[1]),
-+	.depar_out_tvalid	(m_axis_tvalid_r[1]),
-+	.depar_out_tlast	(m_axis_tlast_r[1]),
-+	// input
-+	.depar_out_tready	(m_axis_tready_r),
++	.depar_out_tready	(m_axis_tready),
++	.back_pressure      (depar_tready),
 +
 +	//control path
 +	.ctrl_s_axis_tdata	(ctrl_s_axis_tdata_sv[NUM_OF_STAGES+1]),
@@ -6832,7 +7011,16 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv
 +);
 +
 +
-+logic first_beat;
++logic handShake;
++logic notReadyCond;
++
++/* if this is a one beat packet (tvalid == 1 && s_axis_tlast==1) after a long packet (handShake) 
++   we are not ready to accept due to cam table lookup frequency limitations.
++   However don't stay to 0 for more than 1 cycle*/
++assign notReadyCond = ~((s_axis_tlast & s_axis_tvalid) & handShake);
++assign s_axis_tready = &{stg_ready} & tready_pkt_filter & depar_back_pressure & notReadyCond;
++// TODO: try to remove &{stg_ready} as backpressure from the tready signal going out of the pipeline, 
++//       since it greatly impact timing constraints
 +
 +always_ff @(posedge clk) begin
 +    if (~aresetn) begin
@@ -6845,15 +7033,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv
 +        s_axis_tkeep_r <= 0;
 +        s_axis_tuser_r <= 0;
 +        s_axis_tvalid_r <= 0;
-+        s_axis_tready <= 0;
 +        s_axis_tlast_r <= 0;
-+	    
-+	    m_axis_tdata <= 0;
-+        m_axis_tkeep <= 0;
-+        m_axis_tuser <= 0;
-+        m_axis_tvalid <= 0;
-+        m_axis_tready_r <= 0;
-+        m_axis_tlast <= 0;
 +        
 +        vlan_drop_flags_r <= 0;
 +        ctrl_token <= 0;
@@ -6867,7 +7047,9 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv
 +        s_vlan_id_sv <= 0;
 +        s_vlan_id_valid_sv <= 0;
 +        
-+        first_beat <= 0;
++        tready_pkt_filter <= 0;
++        depar_back_pressure <= 0;
++        handShake <= 0;
 +    end
 +    else begin
 +        stg0_phv_in_valid_sv <= stg0_phv_in_valid;
@@ -6879,15 +7061,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv
 +        s_axis_tkeep_r <= s_axis_tkeep;
 +        s_axis_tuser_r <= s_axis_tuser;
 +        s_axis_tvalid_r <= s_axis_tvalid & s_axis_tready;
-+        s_axis_tready <= &{stg_ready, s_axis_tready_r} & (~s_axis_tlast) | (s_axis_tlast & ~first_beat);
 +        s_axis_tlast_r <= s_axis_tlast;
-+        
-+	    m_axis_tdata <= m_axis_tdata_r[switch_out];
-+        m_axis_tkeep <= m_axis_tkeep_r[switch_out];
-+        m_axis_tuser <= m_axis_tuser_r[switch_out];
-+        m_axis_tvalid <= m_axis_tvalid_r[switch_out];
-+        m_axis_tready_r <= m_axis_tready;
-+        m_axis_tlast <= m_axis_tlast_r[switch_out];
 +        
 +        vlan_drop_flags_r <= vlan_drop_flags;
 +        ctrl_token <= ctrl_token_r;
@@ -6901,7 +7075,9 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/rmt_wrapper.sv
 +        s_vlan_id_sv <= s_vlan_id;
 +        s_vlan_id_valid_sv <= s_vlan_id_valid;
 +        
-+        first_beat <= ~s_axis_tvalid;
++        tready_pkt_filter <= s_axis_tready_r;
++        depar_back_pressure <= depar_tready;
++        handShake <= s_axis_tlast & s_axis_tvalid & s_axis_tready;
 +    end
 +end
 +
@@ -7252,7 +7428,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/tcl/proj_sim.t
  read_verilog "./action/action_engine.v"
  read_verilog "./action/alu_1.v"
  read_verilog "./action/alu_2.v"
-@@ -111,13 +125,19 @@
+@@ -111,13 +125,20 @@
  read_verilog "./lookup/lookup_engine_top.v"
  read_verilog "./lookup/lke_cam_part.v"
  read_verilog "./lookup/lke_ram_part.v"
@@ -7268,6 +7444,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/tcl/proj_sim.t
 +add_files -fileset sim_1 -norecurse tb/tb_rmt_wrapper_stages.sv
 +add_files -fileset sim_1 -norecurse tb/tb_rmt_wrapper_moreStages.sv
 +add_files -fileset sim_1 -norecurse tb/tb_rmt_wrapper_throughput.sv
++add_files -fileset sim_1 -norecurse tb/tb_rmt_wrapper_tready.sv
 +set_property top tb_rmt_wrapper_calc [get_filesets sim_1]
 +set_property top_lib xil_defaultlib [get_filesets sim_1]
  update_compile_order -fileset sim_1
@@ -7276,7 +7453,7 @@ diff -ruN '--exclude=.git' '--exclude=p4c' '--exclude=tb' menshen/tcl/proj_sim.t
  set_property include_dirs ${proj_dir} [get_filesets sim_1]
  set_property simulator_language Mixed [current_project]
  set_property verilog_define { {SIMULATION=1} } [get_filesets sim_1]
-@@ -140,4 +160,6 @@
+@@ -140,4 +161,6 @@
  launch_simulation -simset sim_1 -mode behavioral
  run 10us
  

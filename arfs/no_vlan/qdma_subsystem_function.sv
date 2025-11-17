@@ -155,7 +155,7 @@ module qdma_subsystem_function #(
   reg           buffered_axis_c2h_tlast;
   reg    [15:0] buffered_axis_c2h_tuser_size;
   
-  (* dont_touch = "true" *) reg [2:0]          rst_counter;
+  reg [2:0]          rst_counter;
   reg                cam_rst;
   
   qdma_subsystem_function_register reg_inst (
@@ -359,39 +359,21 @@ module qdma_subsystem_function #(
     .aresetn           (axil_aresetn)
   );*/
   
-  reg first_frag_n;
   reg first_frag;
   assign s_axis_c2h_tready = (~rst_busy) & cam_lkup_ready & cam_hwui_ready & rx_path_tready;
   assign queue_id = cam_out_data[10:0];
   
   always @(posedge axis_aclk) begin
     if (~axil_aresetn) begin
-        first_frag_n <= 0;
-    end
-    else begin
-        if(axis_c2h_tlast || (~axis_c2h_tvalid)) begin
-            first_frag_n <= 0;
-        end
-        else begin
-            first_frag_n <= 1;
-        end
-    end
-  end
-  
-  always @(negedge axis_aclk) begin
-    if (~axil_aresetn) begin
         first_frag <= 1;
     end
     else begin
-        if(~first_frag_n) begin
+        if((axis_c2h_tlast && axis_c2h_tvalid && axis_c2h_tready) || !axis_c2h_tvalid)
             first_frag <= 1;
-        end
-        else begin
+        else
             first_frag <= 0;
-        end
     end
   end
-  
   
   always @(posedge axis_aclk) begin
       if (~axil_aresetn) begin
@@ -408,19 +390,20 @@ module qdma_subsystem_function #(
       end
       else begin
           cam_in <= axis_c2h_tdata[288 +: 12];
-          if (axis_c2h_tdata[167] && first_frag) begin             // I should also check that this is the first segment of the packet (where are the headers), 
-                                                                   // since the payload is allowed to have "f2f2" in any position
-                                                                   // If the packet is a configuration one it shouldn't go any further than the cam table 
-                                                                   // (in order to achieve this we are using the "buffered_" axi-stream signals)
+          if (axis_c2h_tdata[167] &&                             // "first_frag" is used to check that this is the first segment of the packet (where are the headers), 
+              first_frag && axis_c2h_tvalid) begin               // since the payload is allowed to have "f2f2" in any position
+                                                                 // If the packet is a configuration one it shouldn't go any further than the cam table 
+                                                                 // (in order to achieve this we are using the "buffered_" axi-stream signals)
               vlan_valid_ff <= 0;
               cam_conf_valid_ff <= axis_c2h_tvalid;
               buffered_axis_c2h_tvalid <= 0;
               queue_conf <= axis_c2h_tdata[336 +: 11];
           end
           else begin
-              vlan_valid_ff <= axis_c2h_tvalid;
+              vlan_valid_ff <= first_frag & axis_c2h_tvalid;
               cam_conf_valid_ff <= 0;
-              buffered_axis_c2h_tvalid <= axis_c2h_tvalid;
+              buffered_axis_c2h_tvalid <= axis_c2h_tvalid & axis_c2h_tready;     // here the tvalid is in & with the tready since there is a 1 cycle delay between the 
+                                                                                 // buf_fifo_inst telling it's not ready and the actual data arrival (buffered_axis_c2h_tdata)
               queue_conf <= 0;
           end
           if (axis_c2h_tdata[352]) begin

@@ -84,7 +84,9 @@ initial begin
     s_axis_c2h_tdata <= 512'h0000000000000000000000000000000100fa902f2e00f2f2d204dededede6f6f6f6f0ede1140000001004200004500080f0000810504030201000b0a09080706;
     s_axis_c2h_tuser_size <= 16'd128;
     s_axis_c2h_tvalid <= 1;
-    s_axis_c2h_tlast <= 0;
+    s_axis_c2h_tlast <= 1;
+    #(CYCLE);
+    s_axis_c2h_tvalid <= 0;
     #(CYCLE);
     s_axis_c2h_tdata <= 512'h0000000000000000000000000000000000fd902f2e00f2f2d204dededede6f6f6f6f0ede1140000001004200004500080f0000810504030201000b0a09080706;
     s_axis_c2h_tuser_size <= 16'd128;
@@ -104,6 +106,8 @@ initial begin
     s_axis_c2h_tuser_size <= 16'd128;
     s_axis_c2h_tvalid <= 1;
     s_axis_c2h_tlast <= 1;
+    #(CYCLE);
+    s_axis_c2h_tvalid <= 0;
     #(CYCLE);
     s_axis_c2h_tdata <= INPUT_PACKET;
     s_axis_c2h_tuser_size <= 16'd128;
@@ -127,7 +131,9 @@ initial begin
     s_axis_c2h_tdata <= 512'h0000000000000000000000000000000000fb902f2e00f2f2d204dededede6f6f6f6f0ede1140000001004200004500080f0000810504030201000b0a09080706;
     s_axis_c2h_tuser_size <= 16'd128;
     s_axis_c2h_tvalid <= 1;
-    s_axis_c2h_tlast <= 0;
+    s_axis_c2h_tlast <= 1;
+    #(CYCLE);
+    s_axis_c2h_tvalid <= 0;
     #(CYCLE);
     s_axis_c2h_tdata <= 512'h0000000000000000000000000000000000fd902f2e00f2f2d204dededede6f6f6f6f0ede1140000001004200004500080f0000810504030201000b0a09080706;
     s_axis_c2h_tuser_size <= 16'd128;
@@ -147,6 +153,8 @@ initial begin
     s_axis_c2h_tuser_size <= 16'd128;
     s_axis_c2h_tvalid <= 1;
     s_axis_c2h_tlast <= 1;
+    #(CYCLE);
+    s_axis_c2h_tvalid <= 0;
     #(CYCLE);
     s_axis_c2h_tdata <= INPUT_PACKET;
     s_axis_c2h_tuser_size <= 16'd128;

@@ -28,6 +28,7 @@ then  # the implementation patch uses the L4 port as the key for isolation
     cp pipeline_tbs/no_vlan_tests/tb_rmt_wrapper_stages.sv menshen/tb/
     cp pipeline_tbs/no_vlan_tests/tb_rmt_wrapper_moreStages.sv menshen/tb/
     cp pipeline_tbs/no_vlan_tests/tb_rmt_wrapper_throughput.sv menshen/tb/
+    cp pipeline_tbs/no_vlan_tests/tb_rmt_wrapper_tready.sv menshen/tb/
 else  # the implementation patch uses the VLAN ID as the key for isolation
     patch -s -p0 < patch_files/menshen_sim.patch
     cp pipeline_tbs/tb_rmt_wrapper_calc.sv menshen/tb/
@@ -35,6 +36,8 @@ else  # the implementation patch uses the VLAN ID as the key for isolation
     cp pipeline_tbs/tb_rmt_wrapper_modules.sv menshen/tb/
     cp pipeline_tbs/tb_rmt_wrapper_stages.sv menshen/tb/
     cp pipeline_tbs/tb_rmt_wrapper_moreStages.sv menshen/tb/
+    cp pipeline_tbs/tb_rmt_wrapper_throughput.sv menshen/tb/
+    cp pipeline_tbs/tb_rmt_wrapper_tready.sv menshen/tb/
 fi
 
 cp patch_files/opennic_integration.tcl menshen/tcl/
@@ -42,10 +45,10 @@ cp patch_files/opennic_integration.tcl menshen/tcl/
 
 # ON SHELL
 rm open-nic-shell/src/qdma_subsystem/qdma_subsystem_function.sv
-cp arfs/qdma_subsystem_function.sv open-nic-shell/src/qdma_subsystem/qdma_subsystem_function.sv
 
 if [[ "$1" != "$implementation" ]];
 then
+    cp arfs/qdma_subsystem_function.sv open-nic-shell/src/qdma_subsystem/qdma_subsystem_function.sv
     patch open-nic-shell/script/build.tcl < patch_files/build_sim.patch
     patch open-nic-shell/src/open_nic_shell.sv < patch_files/open_nic_shell.patch
     patch open-nic-shell/src/open_nic_shell_macros.vh < patch_files/open_nic_shell_macros.patch
@@ -56,6 +59,7 @@ then
     VAR=$(realpath open-nic-tbs)
     sed -i "s|{{VAR}}|${VAR}|g" "open-nic-shell/script/build.tcl"
 else
+    cp arfs/no_vlan/qdma_subsystem_function.sv open-nic-shell/src/qdma_subsystem/qdma_subsystem_function.sv
     patch open-nic-shell/script/build.tcl < patch_files/build_impl.patch
 fi
 

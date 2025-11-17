@@ -991,7 +991,8 @@ rmt_wrapper #(
 	.C_S_AXIS_DATA_WIDTH(C_S_AXIS_DATA_WIDTH),
 	.C_S_AXIS_TUSER_WIDTH(),
 	.C_M_AXIS_DATA_WIDTH(C_M_AXIS_DATA_WIDTH),
-	.PHV_ADDR_WIDTH()
+	.PHV_ADDR_WIDTH(),
+	.NUM_OF_STAGES(16)
 )rmt_wrapper_ins
 (
 	.clk(clk),		// axis clk
